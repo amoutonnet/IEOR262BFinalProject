@@ -25,10 +25,10 @@ def main():
     ]).reshape(-1, 1)
 
     def func(x):
-        return np.dot((x - 1).T, (x - 1))[0][0]
+        return np.dot(c.T, x)[0][0]
 
     cons = [
-        # constraints.AffIneqConstraint(A, b),
+        constraints.AffEqConstraint(A, b),
         constraints.PosConstraint()
     ]
 
@@ -52,7 +52,7 @@ def main():
     opt.optimize(
         x0=x_0,
         max_iter=1000,
-        ftol=1e-12,
+        ftol=0,
         xtol=0,
         plot=True,
         verbose=True

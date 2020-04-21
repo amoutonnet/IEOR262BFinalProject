@@ -56,8 +56,7 @@ class Optimizer():
             it += 1
 
         print('\n\n%s\n' % ('Final Results After {:4d} Iterations'.format(it).center(100, '-')))
-        print('f(x)={:.3f}'.format(fx))
-        print('x={:s}'.format(str(x.reshape(-1))))
+        print_row('f(x)', '%3.3f' % fx, 'x', '%s' % str(x.reshape(-1)), width=[10, 10, 10, 25], header=True)
         if plot:
             self.plot_results()
 
