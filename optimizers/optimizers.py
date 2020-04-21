@@ -85,27 +85,37 @@ class MADSOptimizer(Optimizer):
         dim,
         function,
         constraints,
-        alpha=0.1,
-        beta_1=0.8,
-        beta_2=0.9,
-        gamma=1.1,
-        forcing_function=lambda x: x * x,
+        delta_m=1,
+        delta_p=1,
+        D=None,
+        G=None,
+        tau=4,
+        w_minus=-1,
+        w_plus=1,
+        use_minibasis=True,
     ):
         super().__init__(dim, function, constraints)
         # We verify the characteristics of the hyperparameters
-        assert(
-            alpha > 0 and
-            beta_1 > 0 and
-            beta_2 >= beta_1 and
-            1 > beta_2 and
-            gamma > 1
-        )
-        self.alpha, self.beta_1, self.beta_2, self.gamma = alpha, beta_1, beta_2, gamma
-        self.forcing_function = forcing_function
-        self.pss = self.get_norms(self.generate_pss())
+        assert(delta_m <= delta_p)
+        self.delta_m, self.delta_p = delta_m, delta_p
+        self.tau, self.w_minus, self.w_plus = tau, w_minus, w_plus
+        self.generated_poll_dirs = {}
+        self.use_minibasis = use_minibasis
+        if D is None:
+            self.D = self.generate_pss()
+        else:
+            self.D = D
+        if G is None:
+            self.G = np.eye(self.dim)
+        else:
+            self.G = G
 
     def generate_pss(self):
-        return np.concatenate((np.eye(self.dim)[..., np.newaxis], -np.eye(self.dim)[..., np.newaxis]), axis=0)
+        basis = np.eye(self.dim)
+        if self.use_minibasis:
+            return np.concatenate((basis[..., np.newaxis], -np.sum(basis, axis=1)[np.newaxis, :, np.newaxis]), axis=0)
+        else:
+            return np.concatenate((basis[..., np.newaxis], -basis[..., np.newaxis]), axis=0)
 
     def get_norms(self, pss):
         to_return = []
@@ -114,26 +124,66 @@ class MADSOptimizer(Optimizer):
         return to_return
 
     def search(self, x, fx):
-        return x, fx, False
-
-    def poll(self, x, fx):
-        for d, normd in self.pss:
-            tempx = x + self.alpha * d
+        for d in self.D:
+            tempx = x + self.delta_m * d
             tempfx = self.function(tempx)
-            if self.test_constraints(tempx) and fx - tempfx > self.forcing_function(self.alpha * normd):
+            if self.test_constraints(tempx) and fx >= tempfx:
                 return tempx, tempfx, True
         return x, fx, False
 
+    def generate_poll_direction(self, l):
+        if l in self.generated_poll_dirs:
+            ihat = np.where(abs(self.generated_poll_dirs[l]) == 2**l)[0]
+            return self.generated_poll_dirs[l], ihat
+
+        else:
+            self.generated_poll_dirs[l] = np.random.randint(-2**l + 1, 2**l, size=(self.dim, 1))
+            ihat = np.random.randint(0, self.dim)
+            self.generated_poll_dirs[l][ihat, 0] = (2 * np.random.randint(2) - 1) * 2**l
+            return self.generated_poll_dirs[l], ihat
+
+    def generate_poll_basis(self):
+        l = int(-np.log(self.delta_m) / np.log(4))
+        b, ihat = self.generate_poll_direction(l)
+        L = np.diag((2 * np.random.randint(2, size=self.dim) - 1) * 2**l) + np.tril(np.random.randint(-2**l + 1, 2**l, size=(self.dim, self.dim)), -1)
+        B = np.zeros_like(L)
+        perm = np.concatenate((np.arange(0, ihat, 1), np.arange(ihat + 1, self.dim, 1)))
+        np.random.shuffle(perm)
+        for i in range(self.dim - 1):
+            for j in range(self.dim - 1):
+                B[perm[i], j] = L[i, j]
+        for i in range(self.dim):
+            B[i, self.dim - 1] = b[i]
+        np.random.shuffle(np.transpose(B))
+        if self.use_minibasis:
+            self.delta_p = self.dim * np.sqrt(self.delta_m)
+            return np.concatenate((B[..., np.newaxis], -np.sum(B, axis=1)[np.newaxis, :, np.newaxis]), axis=0)
+        else:
+            self.delta_p = np.sqrt(self.delta_m)
+            return np.concatenate((B[..., np.newaxis], -B[..., np.newaxis]), axis=0)
+
+    def poll(self, x, fx):
+        for d in self.generate_poll_basis():
+            tempx = x + self.delta_m * d
+            tempfx = self.function(tempx)
+            if self.test_constraints(tempx) and fx >= tempfx:
+                return tempx, tempfx, True
+        return x, fx, False
+
+    def update_delta_m(self, success):
+        if success:
+            if self.delta_m <= 1 / self.tau:
+                self.delta_m *= self.tau
+        else:
+            self.delta_m /= self.tau
+
     def step(self, x, fx):
         success = False
-        while not success:
+        while not success and self.delta_m > 1 / 4**30:
             x, fx, success = self.search(x, fx)
             if not success:
                 x, fx, success = self.poll(x, fx)
-            if success:
-                self.alpha *= np.random.uniform(1, self.gamma)
-            else:
-                self.alpha *= np.random.uniform(self.beta_1, self.beta_2)
+            self.update_delta_m(success)
         return x, fx
 
 
