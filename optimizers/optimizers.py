@@ -121,7 +121,7 @@ class MADSOptimizer(Optimizer):
         for d, normd in self.pss:
             tempx = x + self.alpha * d
             tempfx = self.function(tempx)
-            if self.test_constraints(x) and fx - tempfx > self.forcing_function(self.alpha * normd):
+            if self.test_constraints(tempx) and fx - tempfx > self.forcing_function(self.alpha * normd):
                 return tempx, tempfx, True
         return x, fx, False
 

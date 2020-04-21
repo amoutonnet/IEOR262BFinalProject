@@ -25,7 +25,7 @@ def main():
     ]).reshape(-1, 1)
 
     def func(x):
-        return np.dot((x + 1).T, (x + 1))[0][0]
+        return np.dot((x - 1).T, (x - 1))[0][0]
 
     cons = [
         # constraints.AffIneqConstraint(A, b),
@@ -39,8 +39,8 @@ def main():
             function=func,
             constraints=cons,
             alpha=1e-2,
-            beta_1=1e-2,
-            beta_2=5e-2,
+            beta_1=0.8,
+            beta_2=0.9,
             gamma=1.1,
             forcing_function=lambda x: x * x,
         )
