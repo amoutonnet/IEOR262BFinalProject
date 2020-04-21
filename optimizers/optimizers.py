@@ -117,12 +117,6 @@ class MADSOptimizer(Optimizer):
         else:
             return np.concatenate((basis[..., np.newaxis], -basis[..., np.newaxis]), axis=0)
 
-    def get_norms(self, pss):
-        to_return = []
-        for i in pss:
-            to_return.append((i, np.linalg.norm(i)))
-        return to_return
-
     def search(self, x, fx):
         for d in self.D:
             tempx = x + self.delta_m * d
