@@ -7,6 +7,9 @@ class Constraint():
     def __init__(self, f):
         self.f = f
 
+    def evaluate(self, x):
+        return self.f(x)
+        
     def test(self, x):
         raise NotImplementedError
 
