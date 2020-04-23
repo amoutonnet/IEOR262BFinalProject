@@ -190,14 +190,14 @@ class MADSOptimizer(Optimizer):
 
 class CMAESOptimizer(Optimizer):
     """
-    Implementation of CMAES initialization and steps:
-    functions: generate_offsprings, update_x_mean, update_params, step
     CMAES code inspired from this matlab version by N.Hansen, Inria: http://cma.gforge.inria.fr/purecmaes.m
     MSR and Adaptative augmented Lagrangian from by this paper: Atamna et al, 2016 Augmented Lagrangian Constraint Handling for CMA-ES—Case of a Single Linear Constraint
+    Functions: lagrangian (for constrained problems), generate_offsprings, select_offsprings, update_x_mean, update_params, stop_criteria, step
     """
     def __init__(self, dim, function, constraints, learning_rate, lambd=None, MSR = False, constrained_problem=False, stop_eigenvalue=1e7):
         super().__init__(dim, function, constraints)
         assert len(self.constraints) <= 1, 'This algorithm can handle only up to one constraint'
+        assert len(self.constraints[0].evaluate(np.zeros(self.dim))) == 1, 'This algorithm can handle only up to one constraint'
         """ User defined parameters """
         self.sigma = learning_rate                                              # Initial learning rate
         if lambd != None:
@@ -206,7 +206,7 @@ class CMAESOptimizer(Optimizer):
             self.lambd = 4 + int(3 * np.log(self.dim))                          # Recommended value for the number of offsprings lambda
         self.MSR = MSR                                                          # Is Mean Success Rule ste-size activated
         self.constrained_problem = constrained_problem                          # Is there a constraint
-        self.stop_eigenvalue = stop_eigenvalue                                  # if max(D) > min(D) * stop_eigenvalue, stop otpimization
+        self.stop_eigenvalue = stop_eigenvalue                                  # if max(D) > min(D) * stop_eigenvalue, stop optimization
         self.init_strategy_params()                     
         self.init_dynamic_params()                      
 
