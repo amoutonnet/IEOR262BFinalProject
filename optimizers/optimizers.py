@@ -174,9 +174,9 @@ class MADSOptimizer(Optimizer):
                 self.delta_m *= self.tau
         else:
             self.delta_m /= self.tau
-    
-    def stop_criteria(self):   
-        return False # True if optimization must stop because of optimizer condition, not defined here
+
+    def stop_criteria(self):
+        return False  # True if optimization must stop because of optimizer condition, not defined here
 
     def step(self, x, fx):
         success = False
@@ -194,7 +194,8 @@ class CMAESOptimizer(Optimizer):
     MSR and Adaptative augmented Lagrangian from by this paper: Atamna et al, 2016 Augmented Lagrangian Constraint Handling for CMA-ES—Case of a Single Linear Constraint
     Functions: lagrangian (for constrained problems), generate_offsprings, select_offsprings, update_x_mean, update_params, stop_criteria, step
     """
-    def __init__(self, dim, function, constraints, learning_rate, lambd=None, MSR = False, constrained_problem=False, stop_eigenvalue=1e7):
+
+    def __init__(self, dim, function, constraints, learning_rate, lambd=None, MSR=False, constrained_problem=False, stop_eigenvalue=1e7):
         super().__init__(dim, function, constraints)
         assert len(self.constraints) <= 1, 'This algorithm can handle only up to one constraint'
         assert len(self.constraints[0].evaluate(np.zeros(self.dim))) == 1, 'This algorithm can handle only up to one constraint'
@@ -207,13 +208,13 @@ class CMAESOptimizer(Optimizer):
         self.MSR = MSR                                                          # Is Mean Success Rule ste-size activated
         self.constrained_problem = constrained_problem                          # Is there a constraint
         self.stop_eigenvalue = stop_eigenvalue                                  # if max(D) > min(D) * stop_eigenvalue, stop optimization
-        self.init_strategy_params()                     
-        self.init_dynamic_params()                      
+        self.init_strategy_params()
+        self.init_dynamic_params()
 
     def init_strategy_params(self):
         """ Strategy parameters settings: Selection """
         self.mu = self.lambd / 2                                                # number of offsprings, smaller => faster convergence, bigger => avoid local optima
-        self.weights = np.log(self.mu + 0.5) - np.log(np.arange(self.mu) +1)    # Raw weights for recombination
+        self.weights = np.log(self.mu + 0.5) - np.log(np.arange(self.mu) + 1)    # Raw weights for recombination
         self.weights = self.weights / np.sum(self.weights)                      # normalized weights for recombination
         self.mu = int(self.mu)                                                  # number of parents
         self.mu_eff = 1 / np.sum(self.weights**2)                               # variance effectiveness of sum(w_i*x_i)
@@ -221,7 +222,7 @@ class CMAESOptimizer(Optimizer):
         """ Strategy parameters settings: Adaptation """
         self.cc = (4 + self.mu_eff / self.dim) / (self.dim + 4 + 2 * self.mu_eff / self.dim)                    # time constant for cumulation for C
         self.c1 = 2 / ((self.dim + 1.3)**2 + self.mu_eff)                                                       # learning rate  for rank-one update for C
-        self.cm = min(1 - self.c1, 2 * (self.mu_eff - 2 + 1 / self.mu_eff) / ((self.dim+2)**2 + self.mu_eff))   # learning rate for rank-mu update for C
+        self.cm = min(1 - self.c1, 2 * (self.mu_eff - 2 + 1 / self.mu_eff) / ((self.dim + 2)**2 + self.mu_eff))   # learning rate for rank-mu update for C
         if self.MSR:
             self.cs = 0.3                                                                                       # time constant for cumulation for sigma
             self.ds = 2 - 2 / self.dim                                                                          # damping for sigma
@@ -241,9 +242,9 @@ class CMAESOptimizer(Optimizer):
         self.eigeneval = 0                                                              # track updates of B and D
         self.ps = np.zeros((self.dim, 1))                                               # evolution path fo learning rate sigma
         self.pc = np.zeros((self.dim, 1))                                               # evolution path for C
-        self.chi_N = np.sqrt(self.dim) * (1 - 1/(4*self.dim) + 1/(21*self.dim**2))      # expectation of ||N(0, I||
+        self.chi_N = np.sqrt(self.dim) * (1 - 1 / (4 * self.dim) + 1 / (21 * self.dim**2))      # expectation of ||N(0, I||
         if self.MSR and self.constrained_problem:
-            self.chi = 2**(1 / self.dim)                                                # 
+            self.chi = 2**(1 / self.dim)                                                #
             self.gamma = 5                                                              # Lagrange factor
             self.omega = 1                                                              # penalty factor of the augmented Lagrangian
 
@@ -255,7 +256,7 @@ class CMAESOptimizer(Optimizer):
         if np.all(self.gamma + self.omega * cons_val) >= 0:
             return np.squeeze(self.function(x) + self.gamma * cons_val + self.omega * cons_val**2)
         else:
-            return - self.gamma**2 / 2 / self.omega 
+            return - self.gamma**2 / 2 / self.omega
 
     def generate_offsprings(self):
         """
@@ -271,7 +272,7 @@ class CMAESOptimizer(Optimizer):
         # Evaluate offsprings and select best individuals
         """
         if self.MSR and self.constrained_problem:
-            fk = np.apply_along_axis(self.lagrangian, axis = 0, arr=xk) # evaluating each offspring on lagrangian value basis
+            fk = np.apply_along_axis(self.lagrangian, axis=0, arr=xk)  # evaluating each offspring on lagrangian value basis
         else:
             fk = np.apply_along_axis(self.function, axis=0, arr=xk)  # evaluating each offspring on objective function value basis
         idx = np.argsort(fk)  # indices of each xk by descending value of f(xk)
@@ -291,7 +292,7 @@ class CMAESOptimizer(Optimizer):
 
         if self.MSR:
             # Cumulation path for covariance matrix adaptation
-            self.pc = (1 - self.cc) * self.pc + np.sqrt(self.cc * (2 - self.cc) * self.mu_eff) *  (self.x_mean - self.x_old) / self.sigma
+            self.pc = (1 - self.cc) * self.pc + np.sqrt(self.cc * (2 - self.cc) * self.mu_eff) * (self.x_mean - self.x_old) / self.sigma
 
             # Covariance matrix adaptation
             rank1_update = np.dot(self.pc, self.pc.T)
@@ -301,8 +302,8 @@ class CMAESOptimizer(Optimizer):
             # Step-size sigma update
             K_succ = np.count_nonzero(fk < jth_offspring)
             success_measure = 2 * K_succ / self.lambd - 1
-            self.ps  = (1 - self.cs) * self.ps + self.cs * success_measure
-            self.sigma *= np.exp(self.ps/self.ds)
+            self.ps = (1 - self.cs) * self.ps + self.cs * success_measure
+            self.sigma *= np.exp(self.ps / self.ds)
 
             if self.constrained_problem:
                 cons_val = self.constraints[0].evaluate(self.x_mean)
@@ -313,25 +314,25 @@ class CMAESOptimizer(Optimizer):
                 condition_1 = self.omega * cons_val**2 < self.k1 * abs(self.lagrangian(self.x_mean) - self.lagrangian(self.x_old)) / self.dim
                 condition_2 = self.k2 * abs(cons_val - cons_val_old) < abs(cons_val_old)
                 if condition_1 or condition_2:
-                    self.omega *= self.chi**(1/4)
+                    self.omega *= self.chi**(1 / 4)
                 else:
                     self.omega /= self.chi
 
         else:
             # Cumulation paths
-            self.ps  = (1 - self.cs) * self.ps + np.sqrt(self.cs * (2 - self.cs) * self.mu_eff) * np.dot(self.invsqrtC, self.x_mean - self.x_old) / self.sigma
+            self.ps = (1 - self.cs) * self.ps + np.sqrt(self.cs * (2 - self.cs) * self.mu_eff) * np.dot(self.invsqrtC, self.x_mean - self.x_old) / self.sigma
             # Heaviside function: boolean to prevent a too steep update of pc, especially for small sigma
             hsig = np.linalg.norm(self.ps) / np.sqrt(1 - (1 - self.cs)**(2 * (self.it + 1))) < (1.4 + 2 / (self.dim + 1)) * self.chi_N
-            self.pc = (1 - self.cc) * self.pc + hsig * np.sqrt(self.cc * (2 - self.cc) * self.mu_eff) *  (self.x_mean - self.x_old) / self.sigma
+            self.pc = (1 - self.cc) * self.pc + hsig * np.sqrt(self.cc * (2 - self.cc) * self.mu_eff) * (self.x_mean - self.x_old) / self.sigma
 
             # Covariance matrix adaptation
-            delta_hsig = (1 - hsig) * self.cc * (2 - self.cc) <= 1 # to correct the rank1 update in the case where hsig = 0
+            delta_hsig = (1 - hsig) * self.cc * (2 - self.cc) <= 1  # to correct the rank1 update in the case where hsig = 0
             rank1_update = np.dot(self.pc, self.pc.T) + delta_hsig * self.C
             rankmu_update = np.linalg.multi_dot([best_individuals_N0C, np.diag(self.weights), best_individuals_N0C.T])
             self.C = (1 - self.c1 - self.cm) * self.C + self.c1 * rank1_update + self.cm * rankmu_update
 
             # Step-size sigma update
-            self.sigma *= np.exp((self.cs/self.ds) * (np.linalg.norm(self.ps)/self.chi_N - 1))
+            self.sigma *= np.exp((self.cs / self.ds) * (np.linalg.norm(self.ps) / self.chi_N - 1))
 
         # Update B and D from C
         if self.it - self.eigeneval > 1 / (self.c1 + self.cm) / self.dim / 10:
@@ -340,7 +341,7 @@ class CMAESOptimizer(Optimizer):
             d, self.B = np.linalg.eig(self.C)
             self.D = np.sqrt(np.diag(d))
             self.invsqrtC = np.linalg.multi_dot([self.B, np.linalg.inv(self.D), self.B.T])
-        else: 
+        else:
             print('No update of B and D at iteration %i' % self.it)
 
     def stop_criteria(self):
@@ -365,4 +366,3 @@ class CMAESOptimizer(Optimizer):
         if self.stop_criteria():
             return self.x_old, self.function(self.x_old)
         return self.x_mean, self.function(self.x_mean)
-
