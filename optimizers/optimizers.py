@@ -5,7 +5,7 @@ import copy
 np.set_printoptions(threshold=float('inf'), linewidth=1000, suppress=True, precision=2)
 
 
-def print_row(*strings, width=[11, 10, 15, 15, 25], header=False):
+def print_row(*strings, width=[11, 20, 20, 20, 50], header=False):
     to_print = '|'
     for i, s in enumerate(strings[:-1]):
         to_print += s.center(width[i])
@@ -20,11 +20,14 @@ def print_row(*strings, width=[11, 10, 15, 15, 25], header=False):
 
 class Optimizer():
 
-    def __init__(self, dim, function, constraints):
+    def __init__(self, dim, function, constraints, max_iter, ftol, xtol):
         self.dim = dim
         self.function = function
         self.constraints = constraints
         self.it = 1
+        self.max_iter = max_iter
+        self.ftol = ftol
+        self.xtol = xtol
 
     def step(self, x, fx):
         raise NotImplementedError
@@ -38,46 +41,56 @@ class Optimizer():
                 return False
         return True
 
-    def optimize(self, x0, max_iter=float('inf'), ftol=0, xtol=0, plot=False, verbose=False):
-        x = copy.deepcopy(x0)
-        fx = self.function(x)
+    def optimize(self, x0, plot=False, verbose=False):
+        self.x = copy.deepcopy(x0)
+        self.fx = self.function(self.x)
         self.it = 1
-        finish = False
         self.track = list()
         print('\n%s\n' % ('Optimization Starting'.center(100, '-')))
         print_row('Iteration', 'f(x)', '||xk-xk-1||', '|f(xk)-f(xk-1)|', 'x', header=True)
-        while not finish:
-            x_next, fx_next = self.step(x, fx)
-            xdiff = np.linalg.norm(x_next - x)
-            fdiff = abs(fx_next - fx)
-            if self.it >= max_iter or xdiff < xtol or fdiff < ftol or self.stop_criteria():
-                finish = True
-            x, fx = x_next, fx_next
-            self.track.append((x, fx, xdiff, fdiff))
+        while True:
+            self.x_next, self.fx_next = self.step(self.x, self.fx)
+            self.xdiff = np.linalg.norm(self.x_next - self.x)
+            self.fdiff = abs(self.fx_next - self.fx)
+            self.x, self.fx = self.x_next, self.fx_next
+            self.track.append((self.x, self.fx, self.xdiff, self.fdiff))
 
             if verbose:
-                print_row('%d' % self.it, '%3.3f' % fx, '%3.3f' % xdiff, '%3.3f' % fdiff, '%s' % str(x.reshape(-1)))
+                print_row('%d' % self.it, '%3.3f' % self.fx, '%3.3f' % self.xdiff, '%3.3f' % self.fdiff, '%s' % str(self.x.reshape(-1)))
+            finish, reason = self.stop_criteria()
+            if finish:
+                break
             self.it += 1
 
-        print('\n\n%s\n' % ('Final Results After {:4d} Iterations'.format(self.it).center(100, '-')))
-        print_row('f(x)', '%3.3f' % fx, 'x', '%s' % str(x.reshape(-1)), width=[10, 10, 10, 25], header=True)
+        reason = reason.upper().center(len(reason) + 4, ' ').center(135, '>')
+        reason = reason[:int(len(reason) / 2)] + reason[int(len(reason) / 2):].replace('>', '<')
+
+        print('%s\n' % reason)
+
+        print('\n%s\n' % ('Final Results After {:4d} Iterations'.format(self.it).center(100, '-')))
+        print_row('f(x)', '%3.3f' % self.fx, 'x', '%s' % str(self.x.reshape(-1)), width=[10, 20, 10, 50], header=True)
         if plot:
             self.plot_results()
 
     def plot_results(self):
         xs, fxs, xdiffs, fdiffs = map(np.array, zip(*self.track))
         xs = np.sum(np.abs(np.squeeze(xs))**2, axis=-1)**(1. / 2)
+        plt.rc('grid', linestyle="--", color='black', alpha=0.5)
         fig, ax = plt.subplots(nrows=2, ncols=2, sharex=True)
-        ax[0, 0].plot(xs)
+        ax[0, 0].plot(xs, linewidth=1, alpha=0.9)
         ax[0, 0].set_ylabel(r'$||x||$')
-        ax[0, 1].plot(fxs)
+        ax[0, 0].grid()
+        ax[0, 1].plot(fxs, linewidth=1, alpha=0.9)
         ax[0, 1].set_ylabel(r'$f(x)$')
-        ax[1, 0].plot(xdiffs)
+        ax[0, 1].grid()
+        ax[1, 0].plot(xdiffs, linewidth=1, alpha=0.9)
         ax[1, 0].set_ylabel(r'$||x_k - x_{k-1}||$')
         ax[1, 0].set_xlabel('steps')
-        ax[1, 1].plot(fdiffs)
+        ax[1, 0].grid()
+        ax[1, 1].plot(fdiffs, linewidth=1, alpha=0.9)
         ax[1, 1].set_ylabel(r'$|f(x_k) - f(x_{k-1})|$')
         ax[1, 1].set_xlabel('steps')
+        ax[1, 1].grid()
         fig.suptitle('Evolution of the Optimization')
         fig.tight_layout(rect=[0, 0, 1, 0.95])
         plt.show()
@@ -89,30 +102,33 @@ class MADSOptimizer(Optimizer):
         dim,
         function,
         constraints,
-        delta_m=1,
-        delta_p=1,
-        D=None,
-        G=None,
-        tau=4,
-        w_minus=-1,
-        w_plus=1,
+        max_iter=1000,
+        ftol=0,
+        xtol=0,
+        lambd_min=0,
+        mu_min=0,
+        epsilon=0,
+        mu=1,
+        lambd=1,
         use_minibasis=True,
     ):
-        super().__init__(dim, function, constraints)
+        super().__init__(
+            dim,
+            function,
+            constraints,
+            max_iter,
+            ftol,
+            xtol,
+        )
         # We verify the characteristics of the hyperparameters
-        assert(delta_m <= delta_p)
-        self.delta_m, self.delta_p = delta_m, delta_p
-        self.tau, self.w_minus, self.w_plus = tau, w_minus, w_plus
+        assert(mu <= lambd)
+        self.mu, self.lambd = mu, lambd
+        self.mu_min, self.lambd_min = mu_min, lambd_min
+        self.epsilon = epsilon
         self.generated_poll_dirs = {}
         self.use_minibasis = use_minibasis
-        if D is None:
-            self.D = self.generate_pss()
-        else:
-            self.D = D
-        if G is None:
-            self.G = np.eye(self.dim)
-        else:
-            self.G = G
+        self.D = self.generate_pss()
+        self.success = False
 
     def generate_pss(self):
         basis = np.eye(self.dim)
@@ -123,7 +139,7 @@ class MADSOptimizer(Optimizer):
 
     def search(self, x, fx):
         for d in self.D:
-            tempx = x + self.delta_m * d
+            tempx = x + self.mu * d
             tempfx = self.function(tempx)
             if self.test_constraints(tempx) and fx >= tempfx:
                 return tempx, tempfx, True
@@ -133,7 +149,6 @@ class MADSOptimizer(Optimizer):
         if l in self.generated_poll_dirs:
             ihat = np.where(abs(self.generated_poll_dirs[l]) == 2**l)[0]
             return self.generated_poll_dirs[l], ihat
-
         else:
             self.generated_poll_dirs[l] = np.random.randint(-2**l + 1, 2**l, size=(self.dim, 1))
             ihat = np.random.randint(0, self.dim)
@@ -141,7 +156,7 @@ class MADSOptimizer(Optimizer):
             return self.generated_poll_dirs[l], ihat
 
     def generate_poll_basis(self):
-        l = int(-np.log(self.delta_m) / np.log(4))
+        l = int(-np.log(self.mu) / np.log(4))
         b, ihat = self.generate_poll_direction(l)
         L = np.diag((2 * np.random.randint(2, size=self.dim) - 1) * 2**l) + np.tril(np.random.randint(-2**l + 1, 2**l, size=(self.dim, self.dim)), -1)
         B = np.zeros_like(L)
@@ -154,37 +169,50 @@ class MADSOptimizer(Optimizer):
             B[i, self.dim - 1] = b[i]
         np.random.shuffle(np.transpose(B))
         if self.use_minibasis:
-            self.delta_p = self.dim * np.sqrt(self.delta_m)
+            self.lambd = self.dim * np.sqrt(self.mu)
             return np.concatenate((B[..., np.newaxis], -np.sum(B, axis=1)[np.newaxis, :, np.newaxis]), axis=0)
         else:
-            self.delta_p = np.sqrt(self.delta_m)
+            self.lambd = np.sqrt(self.mu)
             return np.concatenate((B[..., np.newaxis], -B[..., np.newaxis]), axis=0)
 
     def poll(self, x, fx):
         for d in self.generate_poll_basis():
-            tempx = x + self.delta_m * d
+            tempx = x + self.mu * d
             tempfx = self.function(tempx)
             if self.test_constraints(tempx) and fx >= tempfx:
                 return tempx, tempfx, True
         return x, fx, False
 
-    def update_delta_m(self, success):
+    def update_mu(self, success):
         if success:
-            if self.delta_m <= 1 / self.tau:
-                self.delta_m *= self.tau
+            if self.mu <= 1 / 4:
+                self.mu *= 4
         else:
-            self.delta_m /= self.tau
+            self.mu /= 4
 
     def stop_criteria(self):
-        return False  # True if optimization must stop because of optimizer condition, not defined here
+        if self.it >= self.max_iter:
+            return True, "maximum number of iterations reached"
+        if self.success and self.xdiff < self.xtol:
+            return True, "x_tol reached"
+        if self.success and self.fdiff < self.ftol:
+            return True, "f_tol reached"
+        if self.lambd < self.epsilon:
+            return True, "lambda reached epsilon"
+        if self.mu < self.epsilon:
+            return True, "mu reached epsilon"
+        if self.lambd < self.lambd_min:
+            return True, "lambda reached its minimal value"
+        if self.mu < self.mu_min:
+            return True, "mu reached its minimal value"
+        return False, None
 
     def step(self, x, fx):
-        success = False
-        while not success and self.delta_m > 1 / 4**30:
-            x, fx, success = self.search(x, fx)
-            if not success:
-                x, fx, success = self.poll(x, fx)
-            self.update_delta_m(success)
+        self.success = False
+        x, fx, self.success = self.search(x, fx)
+        if not self.success:
+            x, fx, self.success = self.poll(x, fx)
+        self.update_mu(self.success)
         return x, fx
 
 
@@ -195,8 +223,28 @@ class CMAESOptimizer(Optimizer):
     Functions: lagrangian (for constrained problems), jth_est_value (for MSR) generate_offsprings, select_offsprings, update_x_mean, update_params, stop_criteria, step
     """
 
-    def __init__(self, dim, function, constraints, learning_rate, lambd=None, MSR=False, constrained_problem=False, stop_eigenvalue=1e7):
-        super().__init__(dim, function, constraints)
+    def __init__(
+        self,
+        dim,
+        function,
+        constraints,
+        max_iter=float('inf'),
+        ftol=0,
+        xtol=0,
+        learning_rate=1e-1,
+        lambd=None,
+        MSR=False,
+        constrained_problem=False,
+        stop_eigenvalue=1e7
+    ):
+        super().__init__(
+            dim,
+            function,
+            constraints,
+            max_iter,
+            ftol,
+            xtol,
+        )
         assert len(self.constraints) <= 1, 'This algorithm can handle only up to one constraint'
         if len(self.constraints) > 0:
             assert len(self.constraints[0].evaluate(np.zeros(self.dim))) == 1, 'This algorithm can handle only up to one constraint'
@@ -367,10 +415,16 @@ class CMAESOptimizer(Optimizer):
             print('No update of B and D at iteration %i' % self.it)
 
     def stop_criteria(self):
+        if self.it >= self.max_iter:
+            return True, "maximum number of iterations reached"
+        if self.xdiff < self.xtol:
+            return True, "x_tol reached"
+        if self.fdiff < self.ftol:
+            return True, "f_tol reached"
         # print(self.D)
         # if max(np.diag(self.D)) > self.stop_eigenvalue * min(np.diag(self.D)):
         #     return True
-        return False
+        return False, None
 
     def step(self, x, fx):
         self.x_mean = x
@@ -384,7 +438,7 @@ class CMAESOptimizer(Optimizer):
             best_individuals, best_individuals_N0C = self.select_offsprings(xk, yk)
             self.update_x_mean(best_individuals)
             self.update_params(best_individuals_N0C)
-        if self.stop_criteria():
+        if self.stop_criteria()[0]:
             print('Optimization stopped because of Covariance matrix eigenvalues stopping criteria')
             return self.x_old, self.function(self.x_old)
         # print(self.x_mean, self.function(self.x_mean))

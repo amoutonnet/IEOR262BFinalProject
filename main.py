@@ -22,7 +22,7 @@ def main():
     ]
 
     x_0 = np.array([
-        100, 0, 0, 0, -100
+        1, 1, 1, 1, 1
     ]).reshape(-1, 1)
     n = x_0.shape[0]
 
@@ -50,25 +50,29 @@ def main():
             dim=n,
             function=func,
             constraints=cons,
+            max_iter=100,
+            ftol=0,
+            xtol=0,
+            mu_min=1 / (4**12),
         )
     elif optimizer == 'CMAES':
         opt = optimizers.CMAESOptimizer(
             dim=n,
             function=fsphere,
             constraints=cons,
+            max_iter=1000,
+            ftol=0,
+            xtol=0,
             learning_rate=1,
             lambd=None,
             MSR=False,
-            constrained_problem=False  # careful constrained are inverted (dont know why)
+            constrained_problem=True  # careful constrained are inverted (dont know why)
         )
     else:
         print('This optimizer is not implemented.')
 
     opt.optimize(
         x0=x_0,
-        max_iter=2000,
-        ftol=0,
-        xtol=0,
         plot=True,
         verbose=True
     )
