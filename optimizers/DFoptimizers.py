@@ -157,10 +157,7 @@ class CMAESOptimizer(base.Optimizer):
         assert len(self.constraints) <= 1, 'This algorithm can handle only up to one constraint'
         """ User defined parameters """
         self.sigma = learning_rate                                              # Initial learning rate
-        if lambd != None:
-            self.lambd = lambd
-        else:
-            self.lambd = 4 + int(3 * np.log(self.dim))                          # Recommended value for the number of offsprings lambda
+        self.lambd = 4 + int(3 * np.log(self.dim)) if lambd is None else lambd  # Recommended value for the number of offsprings lambda
         self.MSR = MSR                                                          # Is Mean Success Rule ste-size activated
         self.constrained_problem = bool(len(self.constraints))                          # Is there a constraint
         # self.stop_eigenvalue = stop_eigenvalue                                  # if max(D) > min(D) * stop_eigenvalue, stop optimization
