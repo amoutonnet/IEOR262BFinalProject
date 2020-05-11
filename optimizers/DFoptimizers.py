@@ -1,102 +1,10 @@
 import numpy as np
 import sys
-import matplotlib.pyplot as plt
 import copy
-np.set_printoptions(threshold=float('inf'), linewidth=1000, suppress=True, precision=2)
+from . import base
 
 
-def print_row(*strings, width=[11, 20, 20, 20, 50], header=False):
-    to_print = '|'
-    for i, s in enumerate(strings[:-1]):
-        to_print += s.center(width[i])
-        to_print += ' | '
-    to_print += strings[-1].center(width[-1]) + '|'
-    if header:
-        print('-' * len(to_print))
-    print(to_print)
-    if header:
-        print('-' * len(to_print))
-
-
-class Optimizer():
-
-    def __init__(self, dim, function, constraints, max_iter, ftol, xtol):
-        self.dim = dim
-        self.function = function
-        self.constraints = constraints
-        self.it = 1
-        self.max_iter = max_iter
-        self.ftol = ftol
-        self.xtol = xtol
-
-    def step(self, x, fx):
-        raise NotImplementedError
-
-    def stop_criteria(self):
-        raise NotImplementedError
-
-    def test_constraints(self, x):  # Returns False if a constraint is violated, True otherwise
-        for cons in self.constraints:
-            if not cons.test(x):
-                return False
-        return True
-
-    def optimize(self, x0, plot=False, verbose=False):
-        self.x = copy.deepcopy(x0)
-        self.fx = self.function(self.x)
-        self.it = 1
-        self.track = list()
-        print('\n%s\n' % ('Optimization Starting'.center(100, '-')))
-        print_row('Iteration', 'f(x)', '||xk-xk-1||', '|f(xk)-f(xk-1)|', 'x', header=True)
-        while True:
-            self.x_next, self.fx_next = self.step(self.x, self.fx)
-            self.xdiff = np.linalg.norm(self.x_next - self.x)
-            self.fdiff = abs(self.fx_next - self.fx)
-            self.x, self.fx = self.x_next, self.fx_next
-            self.track.append((self.x, self.fx, self.xdiff, self.fdiff))
-
-            if verbose:
-                print_row('%d' % self.it, '%3.3f' % self.fx, '%3.3f' % self.xdiff, '%3.3f' % self.fdiff, '%s' % str(self.x.reshape(-1)))
-            finish, reason = self.stop_criteria()
-            if finish:
-                break
-            self.it += 1
-
-        reason = reason.upper().center(len(reason) + 4, ' ').center(135, '>')
-        reason = reason[:int(len(reason) / 2)] + reason[int(len(reason) / 2):].replace('>', '<')
-
-        print('%s\n' % reason)
-
-        print('\n%s\n' % ('Final Results After {:4d} Iterations'.format(self.it).center(100, '-')))
-        print_row('f(x)', '%3.3f' % self.fx, 'x', '%s' % str(self.x.reshape(-1)), width=[10, 20, 10, 50], header=True)
-        if plot:
-            self.plot_results()
-
-    def plot_results(self):
-        xs, fxs, xdiffs, fdiffs = map(np.array, zip(*self.track))
-        xs = np.sum(np.abs(np.squeeze(xs))**2, axis=-1)**(1. / 2)
-        plt.rc('grid', linestyle="--", color='black', alpha=0.5)
-        fig, ax = plt.subplots(nrows=2, ncols=2, sharex=True)
-        ax[0, 0].plot(xs, linewidth=1, alpha=0.9)
-        ax[0, 0].set_ylabel(r'$||x||$')
-        ax[0, 0].grid()
-        ax[0, 1].plot(fxs, linewidth=1, alpha=0.9)
-        ax[0, 1].set_ylabel(r'$f(x)$')
-        ax[0, 1].grid()
-        ax[1, 0].plot(xdiffs, linewidth=1, alpha=0.9)
-        ax[1, 0].set_ylabel(r'$||x_k - x_{k-1}||$')
-        ax[1, 0].set_xlabel('steps')
-        ax[1, 0].grid()
-        ax[1, 1].plot(fdiffs, linewidth=1, alpha=0.9)
-        ax[1, 1].set_ylabel(r'$|f(x_k) - f(x_{k-1})|$')
-        ax[1, 1].set_xlabel('steps')
-        ax[1, 1].grid()
-        fig.suptitle('Evolution of the Optimization')
-        fig.tight_layout(rect=[0, 0, 1, 0.95])
-        plt.show()
-
-
-class MADSOptimizer(Optimizer):
+class MADSOptimizer(base.Optimizer):
     def __init__(
         self,
         dim,
@@ -116,6 +24,7 @@ class MADSOptimizer(Optimizer):
             dim,
             function,
             constraints,
+            "MADS",
             max_iter,
             ftol,
             xtol,
@@ -159,7 +68,7 @@ class MADSOptimizer(Optimizer):
         l = int(-np.log(self.mu) / np.log(4))
         b, ihat = self.generate_poll_direction(l)
         L = np.diag((2 * np.random.randint(2, size=self.dim) - 1) * 2**l) + np.tril(np.random.randint(-2**l + 1, 2**l, size=(self.dim, self.dim)), -1)
-        B = np.zeros_like(L)
+        B = np.zeros(L.shape)
         perm = np.concatenate((np.arange(0, ihat, 1), np.arange(ihat + 1, self.dim, 1)))
         np.random.shuffle(perm)
         for i in range(self.dim - 1):
@@ -216,7 +125,7 @@ class MADSOptimizer(Optimizer):
         return x, fx
 
 
-class CMAESOptimizer(Optimizer):
+class CMAESOptimizer(base.Optimizer):
     """
     CMAES code inspired from this matlab version by N.Hansen, Inria: http://cma.gforge.inria.fr/purecmaes.m
     MSR and Adaptative augmented Lagrangian from by this paper: Atamna et al, 2016 Augmented Lagrangian Constraint Handling for CMA-ES—Case of a Single Linear Constraint
@@ -241,6 +150,7 @@ class CMAESOptimizer(Optimizer):
             dim,
             function,
             constraints,
+            "CMAES",
             max_iter,
             ftol,
             xtol,
@@ -438,8 +348,8 @@ class CMAESOptimizer(Optimizer):
             best_individuals, best_individuals_N0C = self.select_offsprings(xk, yk)
             self.update_x_mean(best_individuals)
             self.update_params(best_individuals_N0C)
-        if self.stop_criteria()[0]:
-            print('Optimization stopped because of Covariance matrix eigenvalues stopping criteria')
-            return self.x_old, self.function(self.x_old)
+        # if self.stop_criteria()[0]:
+        #     print('Optimization stopped because of Covariance matrix eigenvalues stopping criteria')
+        #     return self.x_old, self.function(self.x_old)
         # print(self.x_mean, self.function(self.x_mean))
         return self.x_mean, self.function(self.x_mean)

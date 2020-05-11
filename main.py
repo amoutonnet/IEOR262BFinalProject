@@ -1,83 +1,107 @@
-from optimizers import optimizers
+from optimizers import DFoptimizers as dfo
+from optimizers import GBoptimizers as gbo
 from optimizers import constraints
+from functions.functions import function as f
+from functions.functions import gradient as g
+from functions.functions import hessian as h
+from functools import partial
+from utils import graph
+import matplotlib.pyplot as plt
 import numpy as np
+
+np.random.seed(100)
 
 
 def main():
     A = np.array([
-        1, 1, 1, 0, 1
+        [1, 1]
     ])
 
     b = np.array([
-        50
-    ])
-
-    # c = np.array([
-    #     -9, -10, 0, 0
-    # ]).reshape(-1, 1)
-
-    cons = [
-        # constraints.IneqConstraint(lambda x: np.dot(x.T, x) - 3 * x.shape[0])
-        constraints.AffIneqConstraint(A, b)
-    ]
+        - 50
+    ]).reshape(-1, 1)
 
     x_0 = np.array([
-        1, 1, 1, 1, 1
+        -50, -50
     ]).reshape(-1, 1)
     n = x_0.shape[0]
 
-    def fRosenbrock(x):
-        assert x.shape[0] > 1, 'dimension must be greater than one'
-        fx = 100 * np.sum(np.square(x[1:] - np.square(x[:-1])), axis=0) + np.sum(np.square(1 - x[:-1]), axis=0)
-        return fx
+    cons = constraints.Constraints()
+    # cons.addineqcons(A, b)
 
-    def func(x):
-        fx = np.sum(x)
-        return np.squeeze(fx)
+    name = "Sphere"
 
-    def fsphere(x):
-        fx = np.sqrt(np.sum(np.square(x), axis=0))
-        return fx
+    fct = partial(f, name)
+    gdt = partial(g, name)
+    hes = partial(h, name)
+    max_iter = 1000
+    ftol = 0
+    gtol = 0
+    xtol = 0
 
-    cons = [
-        constraints.IneqConstraint(lambda x: np.dot(x.T, x) - 3 * x.shape[0])
-        # constraints.AffIneqConstraint(A, b)
-    ]
+    opts = {}
+    res = {}
 
-    optimizer = 'MADS'  # 'MADS' or 'CMAES'
-    if optimizer == 'MADS':
-        opt = optimizers.MADSOptimizer(
-            dim=n,
-            function=func,
-            constraints=cons,
-            max_iter=100,
-            ftol=0,
-            xtol=0,
-            mu_min=1 / (4**12),
-        )
-    elif optimizer == 'CMAES':
-        opt = optimizers.CMAESOptimizer(
-            dim=n,
-            function=fsphere,
-            constraints=cons,
-            max_iter=1000,
-            ftol=0,
-            xtol=0,
-            learning_rate=1,
-            lambd=None,
-            MSR=False,
-            constrained_problem=True  # careful constrained are inverted (dont know why)
-        )
-    else:
-        print('This optimizer is not implemented.')
+    # opts["MADS"] = dfo.MADSOptimizer(
+    #     dim=n,
+    #     function=fct,
+    #     constraints=cons,
+    #     max_iter=max_iter,
+    #     ftol=ftol,
+    #     xtol=xtol,
+    #     mu_min=1 / (4**12),
+    # )
 
-    opt.optimize(
-        x0=x_0,
-        plot=True,
-        verbose=True
+    # opts["CMAES"] = dfo.CMAESOptimizer(
+    #     dim=n,
+    #     function=fct,
+    #     constraints=cons,
+    #     max_iter=max_iter,
+    #     ftol=ftol,
+    #     xtol=xtol,
+    #     learning_rate=1,
+    #     lambd=None,
+    #     MSR=False,
+    #     constrained_problem=True  # careful constrained are inverted (dont know why)
+    # )
+
+    opts["Newton Line Search"] = gbo.NewtonLineSearchOptimizer(
+        dim=n,
+        function=fct,
+        gradient=gdt,
+        hessian=hes,
+        constraints=cons,
+        max_iter=max_iter,
+        ftol=ftol,
+        gtol=gtol,
+        xtol=xtol,
+        epsilon=1e-8
     )
+
+    # opts["Newton Log Barrier"] = gbo.NewtonLogBarrierOptimizer(
+    #     dim=n,
+    #     function=fct,
+    #     gradient=gdt,
+    #     hessian=hes,
+    #     constraints=cons,
+    #     max_iter=max_iter,
+    #     ftol=ftol,
+    #     gtol=gtol,
+    #     xtol=xtol,
+    #     mu=1.01,
+    #     theta0=1000,
+    #     epsilon=1e-8
+    # )
+
+    for opt in opts.keys():
+        res[opt] = opts[opt].optimize(
+            x0=x_0,
+            verbose=True
+        )
+        graph.plot_track(res[opt], opt)
+
+    plt.show()
 
 
 if __name__ == "__main__":
-    np.random.seed(100)
     main()

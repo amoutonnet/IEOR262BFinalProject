@@ -4,50 +4,59 @@ DELTA = 1e-8
 
 
 class Constraint():
-    def __init__(self, f):
+    def __init__(self, f, g, h):
         self.f = f
-
-    def evaluate(self, x):
-        return self.f(x)
-        
-    def test(self, x):
-        raise NotImplementedError
-
-
-class EqConstraint(Constraint):
-    def __init__(self, f):
-        super().__init__(f)
+        self.g = g
+        self.h = h
 
     def test(self, x):
-        fx = self.f(x)
-        if isinstance(fx, np.ndarray):
-            return all(np.abs(fx) <= DELTA)
-        else:
-            return abs(fx) <= DELTA
+        return self.f(x) <= 0
+
+    def logbarrier(self, x, theta):
+        return theta * np.log(-self.f(x))
+
+    def gradlogbarrier(self, x, theta):
+        return -theta * self.g(x) / self.f(x)
+
+    def hesslogbarrier(self, x, theta):
+        return +theta * (np.dot(self.g(x).T, self.g(x)) / np.square(self.f(x)) - self.h(x) / self.f(x))
 
 
-class IneqConstraint(Constraint):
-    def __init__(self, f):
-        super().__init__(f)
-
-    def test(self, x):
-        fx = self.f(x)
-        if isinstance(fx, np.ndarray):
-            return all(fx <= 0)
-        else:
-            return fx <= 0
-
-
-class AffEqConstraint(EqConstraint):
-    def __init__(self, A, b):
-        super().__init__(lambda x: np.dot(A, x) - b)
-
-
-class AffIneqConstraint(IneqConstraint):
-    def __init__(self, A, b):
-        super().__init__(lambda x: np.dot(A, x) - b)
-
-
-class PosConstraint(IneqConstraint):
+class Constraints():
     def __init__(self):
-        super().__init__(lambda x: -x)
+        self.constraints = []
+
+    def test(self, x):
+        if self.constraints:
+            return all(list(map(lambda c: c.test(x), self.constraints)))
+        else:
+            return True
+
+    def logbarrier(self, x, theta):
+        if self.constraints:
+            return np.sum(np.array(list(map(lambda c: c.logbarrier(x, theta), self.constraints))), axis=0)
+        else:
+            return 0
+
+    def gradlogbarrier(self, x, theta):
+        if self.constraints:
+            return np.sum(np.array(list(map(lambda c: c.gradlogbarrier(x, theta), self.constraints))), axis=0)
+        else:
+            return np.zero(x.shape)
+
+    def hesslogbarrier(self, x, theta):
+        if self.constraints:
+            return np.sum(np.array(list(map(lambda c: c.hesslogbarrier(x, theta), self.constraints))), axis=0)
+        else:
+            return np.zero((x.shape[0], x.shape[0]))
+
+    def addineqcons(self, A, b):
+        assert len(A.shape) == 2 and len(b.shape) == 2, "Constraints must be matrices"
+        for row, rval in zip(A, b):
+            self.constraints += [Constraint(lambda x: np.dot(row, x) - rval, lambda x: row.reshape(-1, 1), lambda x: np.zeros((x.shape[0], x.shape[0])))]
+
+    def addposcons(self, n):
+        self.addineqcons(-np.eye(n), np.zeros((n, 1)))
+
+    def __len__(self):
+        return len(self.constraints)
