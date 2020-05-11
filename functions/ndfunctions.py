@@ -2,9 +2,9 @@ import numpy as np
 
 PI = np.pi
 
-LISTF = ["Rosenbrock", "Sphere", "Rastigrin"]
-LISTG = ["Rosenbrock", "Sphere", "Rastigrin"]
-LISTH = ["Sphere"]
+LISTF = ["Rosenbrock", "Sphere", "Rastigrin", "StyblinskiTang"]
+LISTG = ["Rosenbrock", "Sphere", "Rastigrin", "StyblinskiTang"]
+LISTH = ["Sphere", "StyblinskiTang"]
 
 
 def fRosenbrock(x):
@@ -32,6 +32,18 @@ def gSphere(x):
 
 def hSphere(x):
     return 2 * np.eye(x.shape[0])
+
+
+def fStyblinskiTang(x):
+    return 0.5 * np.sum(x**4 - 16 * x**2 + 5 * x)
+
+
+def gStyblinskiTang(x):
+    return 2 * x**3 - 16 * x + 2.5
+
+
+def hStyblinskiTang(x):
+    return 6 * np.diag(x.ravel()**2) - 16
 
 
 def fRastigrin(x):

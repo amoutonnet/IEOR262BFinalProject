@@ -27,7 +27,7 @@ def main():
     n = x_0.shape[0]
 
     cons = constraints.Constraints()
-    # cons.addineqcons(A, b)
+    cons.addineqcons(A, b)
 
     name = "Sphere"
 

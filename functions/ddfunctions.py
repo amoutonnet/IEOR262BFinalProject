@@ -3,9 +3,9 @@ import numpy as np
 
 PI = np.pi
 
-LISTF = ["Rosenbrock", "Sphere", "Rastigrin", "Easom", "Holder", "CrossInTray"]
-LISTG = ["Rosenbrock", "Sphere", "Rastigrin", "Easom"]
-LISTH = ["Rosenbrock", "Sphere", "Rastigrin", "Easom"]
+LISTF = ["Rosenbrock", "Sphere", "Rastigrin", "Easom", "StyblinskiTang", "Holder", "CrossInTray"]
+LISTG = ["Rosenbrock", "Sphere", "Rastigrin", "Easom", "StyblinskiTang"]
+LISTH = ["Rosenbrock", "Sphere", "Rastigrin", "Easom", "StyblinskiTang"]
 
 
 def fRosenbrock(x, y):
@@ -80,6 +80,24 @@ def hEasom(x, y):
     h[1][1] = -(-2 * y + 2 * PI)**2 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y) + 2 * (-2 * y + 2 * PI) * \
         np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(y) * np.cos(x) + 3 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y)
     return h
+
+
+def fStyblinskiTang(x, y):
+    return 0.5 * (x**4 - 16 * x**2 + 5.0 * x + y**4 - 16 * y**2 + 5.0 * y)
+
+
+def gStyblinskiTang(x, y):
+    return np.array([
+        [-16.0 + 2.0 * x**3 + 2.5],
+        [-16.0 + 2.0 * y**3 + 2.5]
+    ])
+
+
+def hStyblinskiTang(x, y):
+    return np.array([
+        [6 * x**2 - 16, 0],
+        [0, 6 * y**2 - 16]
+    ])
 
 
 def fHolder(x, y):
