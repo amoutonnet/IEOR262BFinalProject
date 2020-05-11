@@ -26,6 +26,9 @@ PARAMS = {
     },
     "CrossInTray": {
         "semiwidth": 5
+    },
+    "StyblinskiTang": {
+        "semiwidth": 5
     }
 }
 

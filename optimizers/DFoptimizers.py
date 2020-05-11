@@ -156,8 +156,6 @@ class CMAESOptimizer(base.Optimizer):
             xtol,
         )
         assert len(self.constraints) <= 1, 'This algorithm can handle only up to one constraint'
-        if len(self.constraints) > 0:
-            assert len(self.constraints[0].evaluate(np.zeros(self.dim))) == 1, 'This algorithm can handle only up to one constraint'
         """ User defined parameters """
         self.sigma = learning_rate                                              # Initial learning rate
         if lambd != None:

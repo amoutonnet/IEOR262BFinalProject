@@ -114,12 +114,13 @@ class NewtonLogBarrierOptimizer(GradientBasedOptimizer):
             gradient,
             hessian,
             constraints,
-            "Newton Line Search",
+            "Newton Log Barrier",
             max_iter,
             ftol,
             gtol,
             xtol
         )
+        assert self.constraints, "%s method need constraints to work" % self.name
         self.barrierfunc = lambda x, theta: function(x) + constraints.logbarrier(x, theta)
         self.barriergrad = lambda x, theta: gradient(x) + constraints.gradlogbarrier(x, theta)
         self.barrierhess = lambda x, theta: hessian(x) + constraints.hesslogbarrier(x, theta)

@@ -42,13 +42,13 @@ class Constraints():
         if self.constraints:
             return np.sum(np.array(list(map(lambda c: c.gradlogbarrier(x, theta), self.constraints))), axis=0)
         else:
-            return np.zero(x.shape)
+            return np.zeros(x.shape)
 
     def hesslogbarrier(self, x, theta):
         if self.constraints:
             return np.sum(np.array(list(map(lambda c: c.hesslogbarrier(x, theta), self.constraints))), axis=0)
         else:
-            return np.zero((x.shape[0], x.shape[0]))
+            return np.zeros((x.shape[0], x.shape[0]))
 
     def addineqcons(self, A, b):
         assert len(A.shape) == 2 and len(b.shape) == 2, "Constraints must be matrices"
