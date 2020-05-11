@@ -32,6 +32,9 @@ class Constraints():
         else:
             return True
 
+    def evaluate(self, x):
+        return list(map(lambda c: abs(c.f(x)), self.constraints))
+
     def logbarrier(self, x, theta):
         if self.constraints:
             return np.sum(np.array(list(map(lambda c: c.logbarrier(x, theta), self.constraints))), axis=0)

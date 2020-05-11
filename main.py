@@ -18,7 +18,7 @@ def main():
     ])
 
     b = np.array([
-        50
+        -50
     ]).reshape(-1, 1)
 
     x_0 = np.array([
@@ -29,7 +29,7 @@ def main():
     cons = constraints.Constraints()
     cons.addineqcons(A, b)
 
-    name = "StyblinskiTang"
+    name = "Sphere"
 
     fct = partial(f, name)
     gdt = partial(g, name)
@@ -52,18 +52,18 @@ def main():
     #     mu_min=1 / (4**12),
     # )
 
-    opts["CMAES"] = dfo.CMAESOptimizer(
-        dim=n,
-        function=fct,
-        constraints=cons,
-        max_iter=max_iter,
-        ftol=ftol,
-        xtol=xtol,
-        learning_rate=1,
-        lambd=None,
-        MSR=False,
-        constrained_problem=True  # careful constrained are inverted (dont know why)
-    )
+    # opts["CMAES"] = dfo.CMAESOptimizer(
+    #     dim=n,
+    #     function=fct,
+    #     constraints=cons,
+    #     max_iter=max_iter,
+    #     ftol=ftol,
+    #     xtol=xtol,
+    #     learning_rate=1,
+    #     lambd=None,
+    #     MSR=False,
+    #     constrained_problem=True  # careful constrained are inverted (dont know why)
+    # )
 
     opts["Newton Line Search"] = gbo.NewtonLineSearchOptimizer(
         dim=n,

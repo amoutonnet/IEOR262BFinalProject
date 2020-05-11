@@ -62,15 +62,14 @@ class NewtonLineSearchOptimizer(GradientBasedOptimizer):
     def bisection_search_algorithm(self, x, d):
         alpha_l, alpha_u = 0, 1
         def grad_h(a): return np.dot(self.gradient(x + a * d).T, d)
-        while 1:
-            alpha_u = alpha_u * 1.5 if self.test_constraints(x + alpha_u * d) else alpha_u * 0.90
-            if grad_h(alpha_u) > 0:
-                break
+        while grad_h(alpha_u) > 0:
+            alpha_u *= 2
         while 1:
             alpha = (alpha_l + alpha_u) / 2
-            if abs(grad_h(alpha)) < self.epsilon:
+            poi = x + alpha * d
+            if self.test_constraints(poi) and(abs(grad_h(alpha)) < self.epsilon or min(self.constraints.evaluate(poi)) < self.epsilon):
                 break
-            elif grad_h(alpha) > 0:
+            elif grad_h(alpha) > 0 or not self.test_constraints(x + alpha_u * d):
                 alpha_u = alpha
             else:
                 alpha_l = alpha
