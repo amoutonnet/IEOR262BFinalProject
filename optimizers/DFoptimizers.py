@@ -114,6 +114,8 @@ class MADSOptimizer(base.Optimizer):
             return True, "lambda reached its minimal value"
         if self.mu < self.mu_min:
             return True, "mu reached its minimal value"
+        if not self.test_constraints(self.x):
+            return True, "constraints violated"
         return False, None
 
     def step(self, x, fx):
@@ -325,6 +327,8 @@ class CMAESOptimizer(base.Optimizer):
             return True, "x_tol reached"
         if self.fdiff < self.ftol:
             return True, "f_tol reached"
+        if not self.test_constraints(self.x):
+            return True, "constraints violated"
         # print(self.D)
         # if max(np.diag(self.D)) > self.stop_eigenvalue * min(np.diag(self.D)):
         #     return True

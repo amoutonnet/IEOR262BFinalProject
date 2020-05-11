@@ -18,7 +18,7 @@ def main():
     ])
 
     b = np.array([
-        -50
+        50
     ]).reshape(-1, 1)
 
     x_0 = np.array([
@@ -59,9 +59,9 @@ def main():
         max_iter=max_iter,
         ftol=ftol,
         xtol=xtol,
-        learning_rate=1,
+        learning_rate=10,
         lambd=None,
-        MSR=True,
+        MSR=False,
     )
 
     # opts["Newton Line Search"] = gbo.NewtonLineSearchOptimizer(

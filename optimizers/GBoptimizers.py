@@ -28,6 +28,8 @@ class GradientBasedOptimizer(base.Optimizer):
             return True, "f_tol reached"
         if np.linalg.norm(self.gradient(self.x_next)) < self.gtol:
             return True, "g_tol reached"
+        if not self.test_constraints(self.x):
+            return True, "constraints violated"
         return False, None
 
 
@@ -81,15 +83,6 @@ class NewtonLineSearchOptimizer(GradientBasedOptimizer):
             x = x + self.bisection_search_algorithm(x, d) * d
         return x, self.function(x)
 
-    def stop_criteria(self):
-        stop, reason = super().stop_criteria()
-        if not stop:
-            if not self.test_constraints(self.x):
-                return True, "constraints violated"
-            return False, None
-        else:
-            return stop, reason
-
 
 class NewtonLogBarrierOptimizer(GradientBasedOptimizer):
     def __init__(
@@ -136,8 +129,6 @@ class NewtonLogBarrierOptimizer(GradientBasedOptimizer):
     def stop_criteria(self):
         stop, reason = super().stop_criteria()
         if not stop:
-            if not self.test_constraints(self.x):
-                return True, "constraints violated"
             if len(self.constraints) * self.theta < self.epsilon:
                 return True, "barrier reached"
             return False, None
