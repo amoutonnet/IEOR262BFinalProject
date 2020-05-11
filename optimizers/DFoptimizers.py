@@ -143,7 +143,6 @@ class CMAESOptimizer(base.Optimizer):
         learning_rate=1e-1,
         lambd=None,
         MSR=False,
-        constrained_problem=False,
         stop_eigenvalue=1e7
     ):
         super().__init__(
@@ -163,7 +162,7 @@ class CMAESOptimizer(base.Optimizer):
         else:
             self.lambd = 4 + int(3 * np.log(self.dim))                          # Recommended value for the number of offsprings lambda
         self.MSR = MSR                                                          # Is Mean Success Rule ste-size activated
-        self.constrained_problem = constrained_problem                          # Is there a constraint
+        self.constrained_problem = bool(len(self.constraints))                          # Is there a constraint
         # self.stop_eigenvalue = stop_eigenvalue                                  # if max(D) > min(D) * stop_eigenvalue, stop optimization
         self.init_strategy_params()
         self.init_dynamic_params()
@@ -213,7 +212,7 @@ class CMAESOptimizer(base.Optimizer):
         """
         Computes the augmented lagrangian of function, constraint using current values of gamma and omega at x
         """
-        cons_val = self.constraints[0].evaluate(x)
+        cons_val = self.constraints.evaluate(x)[0]
         if np.all(self.gamma + self.omega * cons_val) >= 0:
             return np.squeeze(self.function(x) + self.gamma * cons_val + self.omega * cons_val**2 / 2)
         else:
@@ -282,8 +281,8 @@ class CMAESOptimizer(base.Optimizer):
             self.sigma *= np.exp(self.ps / self.ds)
 
             if self.constrained_problem:
-                cons_val = self.constraints[0].evaluate(self.x_mean)
-                cons_val_old = self.constraints[0].evaluate(self.x_old)
+                cons_val = self.constraints.evaluate(self.x_mean)[0]
+                cons_val_old = self.constraints.evaluate(self.x_old)[0]
                 # Compute condition 1 and 2 for omega with omega_t and gamma_t, not gamma_t+1
                 condition_1 = self.omega * cons_val**2 < self.k1 * abs(self.lagrangian(self.x_mean) - self.lagrangian(self.x_old)) / self.dim
                 condition_2 = self.k2 * abs(cons_val - cons_val_old) < abs(cons_val_old)

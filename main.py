@@ -52,31 +52,30 @@ def main():
     #     mu_min=1 / (4**12),
     # )
 
-    # opts["CMAES"] = dfo.CMAESOptimizer(
-    #     dim=n,
-    #     function=fct,
-    #     constraints=cons,
-    #     max_iter=max_iter,
-    #     ftol=ftol,
-    #     xtol=xtol,
-    #     learning_rate=1,
-    #     lambd=None,
-    #     MSR=False,
-    #     constrained_problem=True  # careful constrained are inverted (dont know why)
-    # )
-
-    opts["Newton Line Search"] = gbo.NewtonLineSearchOptimizer(
+    opts["CMAES"] = dfo.CMAESOptimizer(
         dim=n,
         function=fct,
-        gradient=gdt,
-        hessian=hes,
         constraints=cons,
         max_iter=max_iter,
         ftol=ftol,
-        gtol=gtol,
         xtol=xtol,
-        epsilon=1e-8
+        learning_rate=1,
+        lambd=None,
+        MSR=True,
     )
+
+    # opts["Newton Line Search"] = gbo.NewtonLineSearchOptimizer(
+    #     dim=n,
+    #     function=fct,
+    #     gradient=gdt,
+    #     hessian=hes,
+    #     constraints=cons,
+    #     max_iter=max_iter,
+    #     ftol=ftol,
+    #     gtol=gtol,
+    #     xtol=xtol,
+    #     epsilon=1e-8
+    # )
 
     # opts["Newton Log Barrier"] = gbo.NewtonLogBarrierOptimizer(
     #     dim=n,

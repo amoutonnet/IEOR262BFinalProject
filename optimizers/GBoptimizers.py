@@ -67,7 +67,7 @@ class NewtonLineSearchOptimizer(GradientBasedOptimizer):
         while 1:
             alpha = (alpha_l + alpha_u) / 2
             poi = x + alpha * d
-            if self.test_constraints(poi) and(abs(grad_h(alpha)) < self.epsilon or min(self.constraints.evaluate(poi)) < self.epsilon):
+            if self.test_constraints(poi) and(abs(grad_h(alpha)) < self.epsilon or min([abs(i) for i in self.constraints.evaluate(poi)]) < self.epsilon):
                 break
             elif grad_h(alpha) > 0 or not self.test_constraints(x + alpha_u * d):
                 alpha_u = alpha
