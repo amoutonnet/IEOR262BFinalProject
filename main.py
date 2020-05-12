@@ -19,12 +19,12 @@ np.random.seed(100)
 
 # Optimization algorithm stop parameters
 MAX_ITER = 5000
-FTOL = -1
+FTOL = 1e-14
 GTOL = 1e-14
 XTOL = 1e-8
 
 
-def init_optimizers(n, name, opts_list):
+def init_optimizers(n, name, opts_list, **kwargs):
     fct = partial(f, name)
     gdt = partial(g, name)
     hes = partial(h, name)
@@ -52,8 +52,7 @@ def init_optimizers(n, name, opts_list):
             ftol=FTOL,
             xtol=XTOL,
             learning_rate=10,
-            lambd=10,
-            MSR=False,
+            lambd=None,
         )
     if "Newton Line Search" in opts_list:
         opts["Newton Line Search"] = gbo.NewtonLineSearchOptimizer(
@@ -85,13 +84,28 @@ def init_optimizers(n, name, opts_list):
             theta0=10000,
             epsilon=1e-8
         )
+    if "GD" in opts_list:
+        opts["GD"] = gbo.GradientDescentOptimizer(
+            dim=n,
+            function=fct,
+            gradient=gdt,
+            hessian=hes,
+            constraints=cons,
+            getoptinfo=optinf,
+            max_iter=MAX_ITER,
+            ftol=FTOL,
+            gtol=GTOL,
+            xtol=XTOL,
+            epsilon=1e-8,
+            learning_rate = 1e-2
+        )
     return opts, cons
 
 
 def plot_optimization(name, opts_list):
     # Problem definition
     x_0 = np.array([
-        0, 0, 0, 0, 0
+        10, 10
     ]).reshape(-1, 1)
     n = x_0.shape[0]
     opts, _ = init_optimizers(n, name, opts_list)
@@ -132,20 +146,21 @@ def plot_box(opts_list, nb_iter=10, dim=2, names=['Sphere']):
 if __name__ == "__main__":
     # Objective function
     names = []
-    # names += ["Sphere"]
+    names += ["Sphere"]
     # names += ["Rosenbrock"]
     # names += ["Rastigrin"]
     # names += ["Levy13"]
     # names += ["Easom"]
     # names += ["StyblinskiTang"]
     # names += ["CrossInTray"]
-    names += ["Norm1SphereWithSphereCons"]
+    # names += ["Norm1SphereWithSphereCons"]
 
     opts_list = []
     opts_list += ["MADS"]
-    # opts_list += ["CMAES"]
+    opts_list += ["CMAES"]
     # opts_list += ["Newton Line Search"]
     # opts_list += ["Newton Log Barrier"]
+    opts_list += ["GD"]
 
     plot_optimization(names[0], opts_list)
     # plot_box(opts_list=opts_list, nb_iter=100, dim=2, names=names)

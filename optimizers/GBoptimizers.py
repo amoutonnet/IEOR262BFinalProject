@@ -147,3 +147,39 @@ class NewtonLogBarrierOptimizer(GradientBasedOptimizer):
             return False, None
         else:
             return stop, reason
+
+class GradientDescentOptimizer(GradientBasedOptimizer):
+    def __init__(
+        self,
+        dim,
+        function,
+        gradient,
+        hessian,
+        constraints,
+        getoptinfo,
+        max_iter=1000,
+        ftol=0,
+        gtol=0,
+        xtol=0,
+        epsilon=1e-3,
+        learning_rate = 1e-1
+    ):
+        super().__init__(
+                dim,
+                function,
+                gradient,
+                hessian,
+                constraints,
+                getoptinfo,
+                "Gradient Descent",
+                max_iter,
+                ftol,
+                gtol,
+                xtol
+            )
+        self.epsilon = epsilon
+        self.lr = learning_rate
+
+    def step(self, x, fx):
+        x = x -self.lr * self.gradient(x)
+        return x, self.function(x)
