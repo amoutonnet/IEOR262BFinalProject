@@ -2,10 +2,81 @@ import numpy as np
 
 
 PI = np.pi
+MAINLIST = ["Rosenbrock", "Sphere", "Rastigrin", "Easom", "StyblinskiTang", "Levy13"]
 
-LISTF = ["Rosenbrock", "Sphere", "Rastigrin", "Easom", "StyblinskiTang", "Holder", "CrossInTray"]
-LISTG = ["Rosenbrock", "Sphere", "Rastigrin", "Easom", "StyblinskiTang"]
-LISTH = ["Rosenbrock", "Sphere", "Rastigrin", "Easom", "StyblinskiTang"]
+LISTF = MAINLIST + ["Holder", "CrossInTray"]
+LISTG = MAINLIST
+LISTH = MAINLIST
+
+
+INFOS = {
+    "Rosenbrock": {
+        "xopt": np.ones((2, 1)),
+        "fopt": 0
+    },
+    "Sphere": {
+        "xopt": np.zeros((2, 1)),
+        "fopt": 0
+    },
+    "Rastigrin": {
+        "xopt": np.zeros((2, 1)),
+        "fopt": 0
+    },
+    "Easom": {
+        "xopt": np.pi * np.ones((2, 1)),
+        "fopt": -1
+    },
+    "StyblinskiTang": {
+        "xopt": -2.903534 * np.ones((2, 1)),
+        "fopt": -39.16617 * 2
+    },
+    "Levy13": {
+        "xopt": np.ones((2, 1)),
+        "fopt": 0
+    },
+    "Holder": {
+        "xopts": [
+            np.array([
+                [8.05502],
+                [9.66459]
+            ]),
+            np.array([
+                [-8.05502],
+                [9.66459]
+            ]),
+            np.array([
+                [8.05502],
+                [-9.66459]
+            ]),
+            -np.array([
+                [8.05502],
+                [9.66459]
+            ]),
+        ],
+        "fopt": -19.2085
+    },
+    "CrossInTray": {
+        "xopts": [
+            1.34941 * np.array([
+                [1],
+                [1]
+            ]),
+            1.34941 * np.array([
+                [-1],
+                [1]
+            ]),
+            1.34941 * np.array([
+                [1],
+                [-1]
+            ]),
+            -1.34941 * np.array([
+                [1],
+                [1]
+            ]),
+        ],
+        "fopt": -2.06261
+    }
+}
 
 
 def fRosenbrock(x, y):
@@ -65,18 +136,21 @@ def fEasom(x, y):
 
 def gEasom(x, y):
     return np.array([
-        [-(-2*x + 2*pi)*np.exp(-(x - pi)**2 - (y - pi)**2)*np.cos(x)*np.cos(y) + np.exp(-(x - pi)**2 - (y - pi)**2)*np.sin(x)*np.cos(y)],
-        [-(-2*y + 2*pi)*np.exp(-(x - pi)**2 - (y - pi)**2)*np.cos(x)*np.cos(y) + np.exp(-(x - pi)**2 - (y - pi)**2)*np.sin(y)*np.cos(x)]
+        [-(-2 * x + 2 * pi) * np.exp(-(x - pi)**2 - (y - pi)**2) * np.cos(x) * np.cos(y) + np.exp(-(x - pi)**2 - (y - pi)**2) * np.sin(x) * np.cos(y)],
+        [-(-2 * y + 2 * pi) * np.exp(-(x - pi)**2 - (y - pi)**2) * np.cos(x) * np.cos(y) + np.exp(-(x - pi)**2 - (y - pi)**2) * np.sin(y) * np.cos(x)]
     ])
 
 
 def hEasom(x, y):
     h = np.zeros((2, 2))
     # Calculate Hess
-    h[0][0] = -(-2*x + 2*PI)**2*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) + 2*(-2*x + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(x)*np.cos(y) + 3*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y)
-    h[0][1] = -(-2*x + 2*PI)*(-2*y + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) + (-2*x + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(y)*np.cos(x) + (-2*y + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(x)*np.cos(y) - np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(x)*np.sin(y)
+    h[0][0] = -(-2 * x + 2 * PI)**2 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y) + 2 * (-2 * x + 2 * PI) * \
+        np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(x) * np.cos(y) + 3 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y)
+    h[0][1] = -(-2 * x + 2 * PI) * (-2 * y + 2 * PI) * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y) + (-2 * x + 2 * PI) * np.exp(-(x - PI)**2 - (y - PI)**2) * \
+        np.sin(y) * np.cos(x) + (-2 * y + 2 * PI) * np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(x) * np.cos(y) - np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(x) * np.sin(y)
     h[1][0] = h[0][1]
-    h[1][1] = -(-2*y + 2*PI)**2*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) + 2*(-2*y + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(y)*np.cos(x) + 3*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) 
+    h[1][1] = -(-2 * y + 2 * PI)**2 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y) + 2 * (-2 * y + 2 * PI) * \
+        np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(y) * np.cos(x) + 3 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y)
     return h
 
 
@@ -95,6 +169,24 @@ def hStyblinskiTang(x, y):
     return np.array([
         [6 * x**2 - 16, 0],
         [0, 6 * y**2 - 16]
+    ])
+
+
+def fLevy13(x, y):
+    return (x - 1)**2 * (np.sin(3 * PI * y)**2 + 1) + (y - 1)**2 * (np.sin(2 * PI * y)**2 + 1) + np.sin(3 * PI * x)**2
+
+
+def gLevy13(x, y):
+    return np.array([
+        [(2 * x - 2) * (np.sin(3 * PI * y)**2 + 1) + 6 * PI * np.sin(3 * PI * x) * np.cos(3 * PI * x)],
+        [(2 * x - 2) * (np.sin(3 * PI * y)**2 + 1) + 6 * PI * np.sin(3 * PI * x) * np.cos(3 * PI * x)]
+    ])
+
+
+def hLevy13(x, y):
+    return np.array([
+        [-18 * PI**2 * np.sin(3 * PI * x)**2 + 2 * np.sin(3 * PI * y)**2 + 18 * PI**2 * np.cos(3 * PI * x)**2 + 2, 6 * PI * (2 * x - 2) * np.sin(3 * PI * y) * np.cos(3 * PI * y)],
+        [6 * PI * (2 * x - 2) * np.sin(3 * PI * y) * np.cos(3 * PI * y), 6 * PI * (2 * x - 2) * np.sin(3 * PI * y) * np.cos(3 * PI * y)]
     ])
 
 

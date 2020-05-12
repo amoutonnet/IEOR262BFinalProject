@@ -105,10 +105,10 @@ class DeterministicDFO():
                     self.alpha = self.gamma * self.alpha
                 else:
                     self.alpha = self.beta * self.alpha
-                if not k + l:
-                    self.ax[k][l].plot(self.current_x[0], self.current_x[1], 'ro', label="New point", markersize=self.ms, zorder=5)
-                else:
-                    self.ax[k][l].plot(self.current_x[0], self.current_x[1], 'ro', markersize=self.ms, zorder=5)
+                # if not k + l:
+                #     self.ax[k][l].plot(self.current_x[0], self.current_x[1], 'ro', label="New point", markersize=self.ms, zorder=5)
+                # else:
+                #     self.ax[k][l].plot(self.current_x[0], self.current_x[1], 'ro', markersize=self.ms, zorder=5)
                 self.ax[k][l].set_title("Iteration no." + str(count))
                 self.ax[k][l].set(adjustable='box', aspect='equal')
                 self.alphas += [self.alpha]

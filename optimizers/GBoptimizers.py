@@ -5,11 +5,12 @@ from . import base
 
 
 class GradientBasedOptimizer(base.Optimizer):
-    def __init__(self, dim, function, gradient, hessian, constraints, name, max_iter, ftol, gtol, xtol):
+    def __init__(self, dim, function, gradient, hessian, constraints, getoptinfo, name, max_iter, ftol, gtol, xtol):
         super().__init__(
             dim,
             function,
             constraints,
+            getoptinfo,
             name,
             max_iter,
             ftol,
@@ -41,6 +42,7 @@ class NewtonLineSearchOptimizer(GradientBasedOptimizer):
         gradient,
         hessian,
         constraints,
+        getoptinfo,
         max_iter=1000,
         ftol=0,
         gtol=0,
@@ -53,6 +55,7 @@ class NewtonLineSearchOptimizer(GradientBasedOptimizer):
             gradient,
             hessian,
             constraints,
+            getoptinfo,
             "Newton Line Search",
             max_iter,
             ftol,
@@ -100,6 +103,7 @@ class NewtonLogBarrierOptimizer(GradientBasedOptimizer):
         gradient,
         hessian,
         constraints,
+        getoptinfo,
         max_iter=1000,
         ftol=0,
         gtol=0,
@@ -114,6 +118,7 @@ class NewtonLogBarrierOptimizer(GradientBasedOptimizer):
             gradient,
             hessian,
             constraints,
+            getoptinfo,
             "Newton Log Barrier",
             max_iter,
             ftol,

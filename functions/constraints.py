@@ -56,10 +56,13 @@ class Constraints():
     def addineqcons(self, A, b):
         assert len(A.shape) == 2 and len(b.shape) == 2, "Constraints must be matrices"
         for row, rval in zip(A, b):
-            self.constraints += [Constraint(lambda x: np.dot(row, x) - rval, lambda x: row.reshape(-1, 1), lambda x: np.zeros((x.shape[0], x.shape[0])))]
+            self.addcons(lambda x: np.dot(row, x) - rval, lambda x: row.reshape(-1, 1), lambda x: np.zeros((x.shape[0], x.shape[0])))
 
     def addposcons(self, n):
         self.addineqcons(-np.eye(n), np.zeros((n, 1)))
+
+    def addcons(self, f, g, h):
+        self.constraints += [Constraint(f, g, h)]
 
     def __len__(self):
         return len(self.constraints)

@@ -4,12 +4,13 @@ import numpy as np
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 
+
 def confidence_ellipse(cov, xmean, ax, facecolor='none', **kwargs):
     """
     from https://matplotlib.org/devdocs/gallery/statistics/confidence_ellipse.html  
     Create a plot of the covariance confidence ellipse of *x* and *y*.
     """
-    pearson = cov[0, 1]/np.sqrt(cov[0, 0] * cov[1, 1])
+    pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
     ell_radius_x = np.sqrt(1 + pearson)
     ell_radius_y = np.sqrt(1 - pearson)
     ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
@@ -24,6 +25,7 @@ def confidence_ellipse(cov, xmean, ax, facecolor='none', **kwargs):
 
     ellipse.set_transform(transf + ax.transData)
     return ax.add_patch(ellipse)
+
 
 class GeneticDFO():
 
@@ -136,11 +138,11 @@ class GeneticDFO():
                     self.invsqrtC = np.dot(np.dot(self.B, np.diag((1 / self.D).T[0])), self.B.T)
                 if not i + l:
                     self.ax[i][l].plot(self.xmean[0], self.xmean[1], 'ro', label="New point", ms=self.ms)
-                    confidence_ellipse(self.C_prev, xold, self.ax[i][l], edgecolor='green', label = 'Cov matrix')
+                    confidence_ellipse(self.C_prev, xold, self.ax[i][l], edgecolor='green', label='Cov matrix')
                 else:
                     self.ax[i][l].plot(self.xmean[0], self.xmean[1], 'ro', ms=self.ms)
                     confidence_ellipse(self.C_prev, xold, self.ax[i][l], edgecolor='green')
-                self.ax[i][l].set_title("Itération n°" + str(count))
+                self.ax[i][l].set_title("Iteration no." + str(count))
                 # self.ax[i][l].legend(loc=2, fontsize=8)
                 self.ax[i][l].set(adjustable='box', aspect='equal')
                 self.sigmas += [self.sigma]

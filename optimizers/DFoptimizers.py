@@ -10,6 +10,7 @@ class MADSOptimizer(base.Optimizer):
         dim,
         function,
         constraints,
+        getoptinfo,
         max_iter=1000,
         ftol=0,
         xtol=0,
@@ -24,6 +25,7 @@ class MADSOptimizer(base.Optimizer):
             dim,
             function,
             constraints,
+            getoptinfo,
             "MADS",
             max_iter,
             ftol,
@@ -139,6 +141,7 @@ class CMAESOptimizer(base.Optimizer):
         dim,
         function,
         constraints,
+        getoptinfo,
         max_iter=float('inf'),
         ftol=0,
         xtol=0,
@@ -151,6 +154,7 @@ class CMAESOptimizer(base.Optimizer):
             dim,
             function,
             constraints,
+            getoptinfo,
             "CMAES",
             max_iter,
             ftol,
@@ -177,13 +181,13 @@ class CMAESOptimizer(base.Optimizer):
         """ Strategy parameters settings: Adaptation """
         self.cc = (4 + self.mu_eff / self.dim) / (self.dim + 4 + 2 * self.mu_eff / self.dim)                    # time constant for cumulation for C
         self.c1 = 2 / ((self.dim + 1.3)**2 + self.mu_eff)                                                       # learning rate  for rank-one update for C
-        self.cm = min(1 - self.c1, 2 * (self.mu_eff - 2 + 1 / self.mu_eff) / ((self.dim + 2)**2 + self.mu_eff)) # learning rate for rank-mu update for C
+        self.cm = min(1 - self.c1, 2 * (self.mu_eff - 2 + 1 / self.mu_eff) / ((self.dim + 2)**2 + self.mu_eff))  # learning rate for rank-mu update for C
         self.cs = (self.mu_eff + 2) / (self.dim + self.mu_eff + 5)                                              # time constant for cumulation for sigma
         self.ds = 1 + 2 * max(0, np.sqrt((self.mu_eff - 1) / (self.dim + 1)) - 1) + self.cs                     # damping for sigma, usually close to 1
         if self.constrained_problem:
             self.k1 = 3                                                                                         # constant param for first condition on omega update
             self.k2 = 5                                                                                         # constant param for second condition on omega update
-    
+
     def init_dynamic_params(self):
         self.B = np.eye(self.dim)                                                           # Coordinate system to go from C to D: defines rotation
         self.D = np.eye(self.dim)                                                           # diagonal D of covariance matric C: defines scaling
