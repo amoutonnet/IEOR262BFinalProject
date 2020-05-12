@@ -26,7 +26,7 @@ def plot_track(track, opt, name):
     fig.suptitle('Evolution of the Optimization of function {:s} with {:s}'.format(name, opt))
     fig.tight_layout(rect=[0, 0, 1, 0.95])
 
-def plot_box(data, func_name):
+def plot_box(data, func_name, dim):
     plt.rc('grid', linestyle="--", color='black', alpha=0.5)
     fig, ax = plt.subplots(nrows=1, ncols=2)
     sns.boxplot(x=data['Optimizer'], y=data['Timestamp'], showmeans=True, ax=ax[0])
@@ -35,5 +35,5 @@ def plot_box(data, func_name):
     sns.boxplot(x=data['Optimizer'], y=data['NbIter'], showmeans=True, ax=ax[1])
     sns.stripplot(x=data['Optimizer'], y=data['NbIter'], data=data, color="grey", jitter=0.2, size=2.5, ax=ax[1])
     ax[1].set_ylabel('Iterations per optimization')
-    fig.suptitle("Time and Iterations per optimization and per Optimizer for function {:s}".format(func_name))
+    fig.suptitle("Time and Iterations, 100 optimizations, for function {:s} in dimension {:d}".format(func_name, dim))
     fig.legend()

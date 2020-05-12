@@ -65,8 +65,8 @@ def fEasom(x, y):
 
 def gEasom(x, y):
     return np.array([
-        [-(-2*x + 2*pi)*np.exp(-(x - pi)**2 - (y - pi)**2)*np.cos(x)*np.cos(y) + np.exp(-(x - pi)**2 - (y - pi)**2)*np.sin(x)*np.cos(y)],
-        [-(-2*y + 2*pi)*np.exp(-(x - pi)**2 - (y - pi)**2)*np.cos(x)*np.cos(y) + np.exp(-(x - pi)**2 - (y - pi)**2)*np.sin(y)*np.cos(x)]
+        [-(-2*x + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) + np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(x)*np.cos(y)],
+        [-(-2*y + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) + np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(y)*np.cos(x)]
     ])
 
 

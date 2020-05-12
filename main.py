@@ -16,9 +16,9 @@ np.random.seed(100)
 
 
 # Optimization algorithm stop parameters
-MAX_ITER = 1000
-FTOL = 0
-GTOL = 1e-8
+MAX_ITER = 5000
+FTOL = -1
+GTOL = 1e-14
 XTOL = 1e-8
 
 def init_optimizers(n, fct, gdt, hes, opts_list=[], cons=[]):
@@ -42,7 +42,7 @@ def init_optimizers(n, fct, gdt, hes, opts_list=[], cons=[]):
         ftol=FTOL,
         xtol=XTOL,
         learning_rate=10,
-        lambd=10,
+        lambd=15,
         MSR=False,
     )
     if "Newton Line Search" in opts_list:
@@ -108,7 +108,7 @@ def plot_optimization():
     opts_list=[]
     opts_list += ["MADS"]
     opts_list += ["CMAES"]
-    # opts_list += ["Newton Line Search"]
+    opts_list += ["Newton Line Search"]
     # opts_list += ["Newton Log Barrier"]
     opts = init_optimizers(n, fct, gdt, hes, opts_list=opts_list, cons=cons)
 
@@ -136,7 +136,7 @@ def plot_box(opts_list=[], nb_iter = 10, dim=2, name='Sphere'):
     b = np.array([
         -1
     ]).reshape(-1, 1)
-    cons.addineqcons(A, b)
+    # cons.addineqcons(A, b)
 
     data =[]
     res = {}
@@ -153,10 +153,11 @@ def plot_box(opts_list=[], nb_iter = 10, dim=2, name='Sphere'):
             ))
             data.append([opt, time() - start_time, len(res[opt][-1])])
     data = pd.DataFrame(data, columns=['Optimizer', 'Timestamp', 'NbIter'])
-    graph.plot_box(data, name)
+    graph.plot_box(data, name, dim)
     plt.show()
 
 
 if __name__ == "__main__":
     plot_optimization()
-    # plot_box(opts_list=["MADS", "CMAES", "Newton Line Search", "Newton Log Barrier"], nb_iter=100, dim=2, name='Sphere')
+    # plot_box(opts_list=["MADS", "CMAES", "Newton Line Search"], nb_iter=100, dim=2, name='Easom')
+    # graph.plot_function(partial(f, 'Sphere'))
