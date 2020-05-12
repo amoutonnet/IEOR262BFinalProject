@@ -29,7 +29,7 @@ class GradientBasedOptimizer(base.Optimizer):
             return True, "f_tol reached"
         if np.linalg.norm(self.gradient(self.x_next)) < self.gtol:
             return True, "g_tol reached"
-        if not self.test_constraints(self.x):
+        if not self.test_constraints(self.x_next):
             return True, "constraints violated"
         return False, None
 

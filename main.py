@@ -5,6 +5,7 @@ from functions.functions import gradient as g
 from functions.functions import hessian as h
 from functions.functions import optinfo
 from functions.functions import getcons
+from functions import constraints
 from functools import partial
 from utils import graph
 import matplotlib.pyplot as plt
@@ -22,6 +23,7 @@ MAX_ITER = 5000
 FTOL = 1e-14
 GTOL = 1e-14
 XTOL = 1e-8
+EPSILON = 1e-8
 
 
 def init_optimizers(n, name, opts_list, **kwargs):
@@ -31,28 +33,38 @@ def init_optimizers(n, name, opts_list, **kwargs):
     optinf = partial(optinfo, name)
     cons = getcons(name, n)
     opts = {}
+
+    # Tolerance hyperparameters
+    max_iter = kwargs.pop('max_iter') if 'max_iter' in kwargs.keys() else MAX_ITER
+    ftol = kwargs.pop('ftol') if 'ftol' in kwargs.keys() else FTOL
+    gtol = kwargs.pop('gtol') if 'gtol' in kwargs.keys() else GTOL
+    xtol = kwargs.pop('xtol') if 'xtol' in kwargs.keys() else XTOL
+    epsilon = kwargs.pop('epsilon') if 'epsilon' in kwargs.keys() else EPSILON
+
     if "MADS" in opts_list:
+        params = kwargs.pop('MADS') if 'MADS' in kwargs.keys() else {}
         opts["MADS"] = dfo.MADSOptimizer(
             dim=n,
             function=fct,
             constraints=cons,
             getoptinfo=optinf,
-            max_iter=MAX_ITER,
-            ftol=FTOL,
-            xtol=XTOL,
-            mu_min=1 / (4**12),
+            max_iter=max_iter,
+            ftol=ftol,
+            xtol=xtol,
+            mu_min= params['mu_min'] if 'mu_min' in params.keys() else 1 / (4**12),
         )
     if "CMAES" in opts_list:
+        params = kwargs.pop('CMAES') if 'CMAES' in kwargs.keys() else {}
         opts["CMAES"] = dfo.CMAESOptimizer(
             dim=n,
             function=fct,
             constraints=cons,
             getoptinfo=optinf,
-            max_iter=MAX_ITER,
-            ftol=FTOL,
-            xtol=XTOL,
-            learning_rate=10,
-            lambd=None,
+            max_iter=max_iter,
+            ftol=ftol,
+            xtol=xtol,
+            learning_rate=params.pop('learning_rate') if 'learning_rate' in params.keys() else 10,
+            lambd=params.pop('lambd') if 'lambd' in params.keys() else None,
         )
     if "Newton Line Search" in opts_list:
         opts["Newton Line Search"] = gbo.NewtonLineSearchOptimizer(
@@ -62,11 +74,11 @@ def init_optimizers(n, name, opts_list, **kwargs):
             hessian=hes,
             constraints=cons,
             getoptinfo=optinf,
-            max_iter=MAX_ITER,
-            ftol=FTOL,
-            gtol=GTOL,
-            xtol=XTOL,
-            epsilon=1e-8
+            max_iter=max_iter,
+            ftol=ftol,
+            gtol=gtol,
+            xtol=xtol,
+            epsilon=epsilon
         )
     if "Newton Log Barrier" in opts_list:
         opts["Newton Log Barrier"] = gbo.NewtonLogBarrierOptimizer(
@@ -76,15 +88,16 @@ def init_optimizers(n, name, opts_list, **kwargs):
             hessian=hes,
             constraints=cons,
             getoptinfo=optinf,
-            max_iter=MAX_ITER,
-            ftol=FTOL,
-            gtol=GTOL,
-            xtol=XTOL,
+            max_iter=max_iter,
+            ftol=ftol,
+            gtol=gtol,
+            xtol=xtol,
             mu=1.01,
             theta0=10000,
-            epsilon=1e-8
+            epsilon=epsilon
         )
     if "GD" in opts_list:
+        params = kwargs.pop('CMAES') if 'CMAES' in kwargs.keys() else {}
         opts["GD"] = gbo.GradientDescentOptimizer(
             dim=n,
             function=fct,
@@ -92,23 +105,23 @@ def init_optimizers(n, name, opts_list, **kwargs):
             hessian=hes,
             constraints=cons,
             getoptinfo=optinf,
-            max_iter=MAX_ITER,
-            ftol=FTOL,
-            gtol=GTOL,
-            xtol=XTOL,
-            epsilon=1e-8,
-            learning_rate = 1e-2
+            max_iter=max_iter,
+            ftol=ftol,
+            gtol=gtol,
+            xtol=xtol,
+            epsilon=epsilon,
+            learning_rate = params.pop('learning_rate') if 'learning_rate' in params.keys() else 1e-2
         )
     return opts, cons
 
 
-def plot_optimization(name, opts_list):
+def plot_optimization(name, opts_list, hp):
     # Problem definition
     x_0 = np.array([
         10, 10
     ]).reshape(-1, 1)
     n = x_0.shape[0]
-    opts, _ = init_optimizers(n, name, opts_list)
+    opts, _ = init_optimizers(n, name, opts_list, **hp)
 
     # Optimize and plot
     res = {}
@@ -121,12 +134,15 @@ def plot_optimization(name, opts_list):
     plt.show()
 
 
-def plot_box(opts_list, nb_iter=10, dim=2, names=['Sphere']):
+def plot_box(opts_list, nb_iter=10, dim=2, names=['Sphere'], hp={}):
     data = []
     for name in names:
         print(name)
-        opts, cons = init_optimizers(dim, name, opts_list=opts_list)
         for _ in tqdm(range(nb_iter), total=nb_iter):
+            if name in hp.keys():
+                    opts, cons = init_optimizers(dim, name, opts_list=opts_list, **hp[name])
+            else:
+                opts, cons = init_optimizers(dim, name, opts_list=opts_list)
             x_0 = np.random.uniform(low=-50, high=50, size=dim).reshape(-1, 1)
             while not cons.test(x_0):
                 x_0 = np.random.uniform(low=-50, high=50, size=dim).reshape(-1, 1)
@@ -146,11 +162,11 @@ def plot_box(opts_list, nb_iter=10, dim=2, names=['Sphere']):
 if __name__ == "__main__":
     # Objective function
     names = []
-    names += ["Sphere"]
+    # names += ["Sphere"]
     # names += ["Rosenbrock"]
     # names += ["Rastigrin"]
     # names += ["Levy13"]
-    # names += ["Easom"]
+    names += ["Easom"]
     # names += ["StyblinskiTang"]
     # names += ["CrossInTray"]
     # names += ["Norm1SphereWithSphereCons"]
@@ -162,5 +178,25 @@ if __name__ == "__main__":
     # opts_list += ["Newton Log Barrier"]
     opts_list += ["GD"]
 
-    plot_optimization(names[0], opts_list)
-    # plot_box(opts_list=opts_list, nb_iter=100, dim=2, names=names)
+
+    # hp template
+    hyperparameters = {}
+    hyperparameters["Rastigrin"] = { # To tune
+        'max_iter': 2000,
+        'ftol': -1,
+        'xtol': 1e-14
+        # 'CMAES': {
+        #     'lambd': 15
+        # }
+    }
+    hyperparameters["Easom"] = { # To tune
+        'max_iter': 2000,
+        'ftol': -1,
+        'xtol': 1e-14,
+        'CMAES': {
+            'lambd': 15
+        }
+    }
+
+    # plot_optimization(names[0], opts_list, hyperparameters["Easom"])
+    plot_box(opts_list=opts_list, nb_iter=100, dim=2, names=names, hp=hyperparameters)

@@ -116,7 +116,7 @@ class MADSOptimizer(base.Optimizer):
             return True, "lambda reached its minimal value"
         if self.mu < self.mu_min:
             return True, "mu reached its minimal value"
-        if not self.test_constraints(self.x):
+        if not self.test_constraints(self.x_next):
             return True, "constraints violated"
         return False, None
 
@@ -289,7 +289,7 @@ class CMAESOptimizer(base.Optimizer):
         if self.fdiff < self.ftol:
             return True, "f_tol reached"
         if self.constrained_problem:
-            if not self.test_constraints(self.x) and self.verbose:
+            if not self.test_constraints(self.x_next) and self.verbose:
                 print("constraints violated")
         return False, None
 
