@@ -65,20 +65,18 @@ def fEasom(x, y):
 
 def gEasom(x, y):
     return np.array([
-        [(np.sin(x) + 2 * (x - PI) * np.cos(x)) * np.cos(y) * np.exp(-((x - PI)**2 + (y - PI)**2))],
-        [(np.sin(y) + 2 * (y - PI) * np.cos(y)) * np.cos(x) * np.exp(-((x - PI)**2 + (y - PI)**2))]
+        [-(-2*x + 2*pi)*np.exp(-(x - pi)**2 - (y - pi)**2)*np.cos(x)*np.cos(y) + np.exp(-(x - pi)**2 - (y - pi)**2)*np.sin(x)*np.cos(y)],
+        [-(-2*y + 2*pi)*np.exp(-(x - pi)**2 - (y - pi)**2)*np.cos(x)*np.cos(y) + np.exp(-(x - pi)**2 - (y - pi)**2)*np.sin(y)*np.cos(x)]
     ])
 
 
 def hEasom(x, y):
     h = np.zeros((2, 2))
-    h[0][0] = -(-2 * x + 2 * PI)**2 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y) + 2 * (-2 * x + 2 * PI) * \
-        np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(x) * np.cos(y) + 3 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y)
-    h[0][1] = -(-2 * x + 2 * PI) * (-2 * y + 2 * PI) * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y) + (-2 * x + 2 * PI) * np.exp(-(x - PI)**2 - (y - PI)**2) * \
-        np.sin(y) * np.cos(x) + (-2 * y + 2 * PI) * np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(x) * np.cos(y) - np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(x) * np.sin(y)
+    # Calculate Hess
+    h[0][0] = -(-2*x + 2*PI)**2*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) + 2*(-2*x + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(x)*np.cos(y) + 3*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y)
+    h[0][1] = -(-2*x + 2*PI)*(-2*y + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) + (-2*x + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(y)*np.cos(x) + (-2*y + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(x)*np.cos(y) - np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(x)*np.sin(y)
     h[1][0] = h[0][1]
-    h[1][1] = -(-2 * y + 2 * PI)**2 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y) + 2 * (-2 * y + 2 * PI) * \
-        np.exp(-(x - PI)**2 - (y - PI)**2) * np.sin(y) * np.cos(x) + 3 * np.exp(-(x - PI)**2 - (y - PI)**2) * np.cos(x) * np.cos(y)
+    h[1][1] = -(-2*y + 2*PI)**2*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) + 2*(-2*y + 2*PI)*np.exp(-(x - PI)**2 - (y - PI)**2)*np.sin(y)*np.cos(x) + 3*np.exp(-(x - PI)**2 - (y - PI)**2)*np.cos(x)*np.cos(y) 
     return h
 
 

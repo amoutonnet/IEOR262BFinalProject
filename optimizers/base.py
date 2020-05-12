@@ -43,8 +43,9 @@ class Optimizer():
         self.fx = self.function(self.x)
         self.it = 1
         self.track = [(self.x, self.fx, None, None)]
+        self.verbose = verbose
         print('\n%s\n' % ('  {} Optimization Starting  '.format(self.name.title()).center(135, '•')))
-        if verbose:
+        if self.verbose:
             print_row('Iteration', 'f(x)', '||xk-xk-1||', '|f(xk)-f(xk-1)|', 'x', header=True)
             print_row('0', '%3.3f' % self.fx, 'nan', 'nan', '%s' % str(self.x.reshape(-1)))
         while True:
@@ -54,7 +55,7 @@ class Optimizer():
             self.track.append((self.x_next, self.fx_next, self.xdiff, self.fdiff))
 
             finish, reason = self.stop_criteria()
-            if verbose and not (reason is not None and "constraints violated" in reason):
+            if self.verbose and not (reason is not None and "constraints violated" in reason):
                 print_row('%d' % self.it, '%3.3f' % self.fx_next, '%3.3f' % self.xdiff, '%3.3f' % self.fdiff, '%s' % str(self.x_next.reshape(-1)))
             if finish:
                 if not "constraints violated" in reason:

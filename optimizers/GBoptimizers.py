@@ -66,15 +66,23 @@ class NewtonLineSearchOptimizer(GradientBasedOptimizer):
         def grad_h(a): return np.dot(self.gradient(x + a * d).T, d)
         while grad_h(alpha_u) > 0:
             alpha_u *= 2
-        while 1:
-            alpha = (alpha_l + alpha_u) / 2
-            poi = x + alpha * d
-            if self.test_constraints(poi) and(abs(grad_h(alpha)) < self.epsilon or min([abs(i) for i in self.constraints.evaluate(poi)]) < self.epsilon):
-                break
-            elif grad_h(alpha) > 0 or not self.test_constraints(x + alpha_u * d):
+        # while 1:
+        alpha_hat = alpha_u
+        alpha_l = 0
+        alpha = (alpha_u + alpha_l) / 2
+        while abs(grad_h(alpha)) > self.epsilon and alpha_hat - alpha_u > self.epsilon:
+            if grad_h(alpha) > 0:
                 alpha_u = alpha
             else:
                 alpha_l = alpha
+            alpha = (alpha_u + alpha_l) / 2
+            # poi = x + alpha * d
+            # if self.test_constraints(poi) and(abs(grad_h(alpha)) < self.epsilon or min([abs(i) for i in self.constraints.evaluate(poi)]) < self.epsilon):
+            #     break
+            # elif grad_h(alpha) > 0 or not self.test_constraints(x + alpha_u * d):
+            #     alpha_u = alpha
+            # else:
+            #     alpha_l = alpha
         return alpha
 
     def step(self, x, fx):
