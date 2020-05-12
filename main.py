@@ -18,9 +18,9 @@ np.random.seed(100)
 
 
 # Optimization algorithm stop parameters
-MAX_ITER = 1000
-FTOL = 0
-GTOL = 1e-8
+MAX_ITER = 5000
+FTOL = -1
+GTOL = 1e-14
 XTOL = 1e-8
 
 
