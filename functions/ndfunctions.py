@@ -4,7 +4,7 @@ PI = np.pi
 
 LISTF = ["Rosenbrock", "Sphere", "Rastigrin", "StyblinskiTang"]
 LISTG = ["Rosenbrock", "Sphere", "Rastigrin", "StyblinskiTang"]
-LISTH = ["Sphere", "StyblinskiTang"]
+LISTH = ["Rosenbrock", "Sphere", "Rastigrin", "StyblinskiTang"]
 
 
 INFOS = {

@@ -31,8 +31,43 @@ class GradientBasedOptimizer(base.Optimizer):
             return True, "g_tol reached"
         if not self.test_constraints(self.x_next):
             return True, "constraints violated"
+        if abs(self.function(self.x_next)) >= 1e10 or np.linalg.norm(self.x_next) >= 1e10:
+            return True, "method diverged"
         return False, None
 
+class NewtonBasicOptimizer(GradientBasedOptimizer):
+    def __init__(
+        self,
+        dim,
+        function,
+        gradient,
+        hessian,
+        constraints,
+        getoptinfo,
+        max_iter=1000,
+        ftol=0,
+        gtol=0,
+        xtol=0,
+    ):
+        super().__init__(
+            dim,
+            function,
+            gradient,
+            hessian,
+            constraints,
+            getoptinfo,
+            "Newton Basic",
+            max_iter,
+            ftol,
+            gtol,
+            xtol
+        )
+
+    def step(self, x, fx):
+        if np.linalg.norm(self.gradient(x)) != 0:
+            d = np.dot(-np.linalg.inv(self.hessian(x)), self.gradient(x))
+            x = x + d
+        return x, self.function(x)
 
 class NewtonLineSearchOptimizer(GradientBasedOptimizer):
     def __init__(
@@ -145,3 +180,39 @@ class NewtonLogBarrierOptimizer(GradientBasedOptimizer):
             return False, None
         else:
             return stop, reason
+
+class GradientDescentOptimizer(GradientBasedOptimizer):
+    def __init__(
+        self,
+        dim,
+        function,
+        gradient,
+        hessian,
+        constraints,
+        getoptinfo,
+        max_iter=1000,
+        ftol=0,
+        gtol=0,
+        xtol=0,
+        epsilon=1e-3,
+        learning_rate = 1e-1
+    ):
+        super().__init__(
+                dim,
+                function,
+                gradient,
+                hessian,
+                constraints,
+                getoptinfo,
+                "Gradient Descent",
+                max_iter,
+                ftol,
+                gtol,
+                xtol
+            )
+        self.epsilon = epsilon
+        self.lr = learning_rate
+
+    def step(self, x, fx):
+        x = x -self.lr * self.gradient(x)
+        return x, self.function(x)

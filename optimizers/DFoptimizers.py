@@ -132,8 +132,7 @@ class MADSOptimizer(base.Optimizer):
 class CMAESOptimizer(base.Optimizer):
     """
     CMAES code inspired from this matlab version by N.Hansen, Inria: http://cma.gforge.inria.fr/purecmaes.m
-    MSR and Adaptative augmented Lagrangian from by this paper: Atamna et al, 2016 Augmented Lagrangian Constraint Handling for CMA-ES—Case of a Single Linear Constraint
-    Functions: lagrangian (for constrained problems), jth_est_value (for MSR) generate_offsprings, select_offsprings, update_x_mean, update_params, stop_criteria, step
+    Functions: lagrangian (for constrained problems), generate_offsprings, select_offsprings, update_x_mean, update_params, stop_criteria, step
     """
 
     def __init__(
@@ -232,8 +231,6 @@ class CMAESOptimizer(base.Optimizer):
         idx = np.argsort(fk)  # indices of each xk by descending value of f(xk)
         selection_x = xk[:, idx[:self.mu]]  # best individuals
         selection_y = yk[:, idx[:self.mu]]  # best individuals before centered on x_mean and sigma**2 reduced
-        # if self.MSR:
-        #     return selection_x, selection_y, fk
         return selection_x, selection_y
 
     def update_x_mean(self, best_individuals):
@@ -241,7 +238,7 @@ class CMAESOptimizer(base.Optimizer):
 
     def update_params(self, best_individuals_N0C, fk=None):
         """
-        Updates all dynamic params ps, pc, C, B, D, sigma, eigeneval, classic CMAES or MSR
+        Updates all dynamic params ps, pc, C, B, D, sigma, eigeneval
         """
         # Cumulation paths
         self.ps = (1 - self.cs) * self.ps + np.sqrt(self.cs * (2 - self.cs) * self.mu_eff) * np.dot(self.invsqrtC, self.x_mean - self.x_old) / self.sigma
@@ -291,6 +288,8 @@ class CMAESOptimizer(base.Optimizer):
             return True, "x_tol reached"
         if self.fdiff < self.ftol:
             return True, "f_tol reached"
+        if self.xdiff > 1e10:
+            return True, "method diverged"
         if self.constrained_problem:
             if not self.test_constraints(self.x_next) and self.verbose:
                 print("constraints violated")
