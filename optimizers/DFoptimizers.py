@@ -288,6 +288,8 @@ class CMAESOptimizer(base.Optimizer):
             return True, "x_tol reached"
         if self.fdiff < self.ftol:
             return True, "f_tol reached"
+        if self.xdiff > 1e10:
+            return True, "method diverged"
         if self.constrained_problem:
             if not self.test_constraints(self.x_next) and self.verbose:
                 print("constraints violated")

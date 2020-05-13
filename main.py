@@ -19,11 +19,12 @@ np.random.seed(100)
 
 
 # Optimization algorithm stop parameters
-MAX_ITER = 5000
+MAX_ITER = 1000
 FTOL = 1e-14
 GTOL = 1e-14
-XTOL = 1e-8
+XTOL = 1e-14
 EPSILON = 1e-8
+CONVERGENCE_THRESHOLD = 1e-3  # for plot_box
 
 
 def init_optimizers(n, name, opts_list, **kwargs):
@@ -65,6 +66,19 @@ def init_optimizers(n, name, opts_list, **kwargs):
             xtol=xtol,
             learning_rate=params.pop('learning_rate') if 'learning_rate' in params.keys() else 10,
             lambd=params.pop('lambd') if 'lambd' in params.keys() else None,
+        )
+    if "Newton Basic" in opts_list:
+        opts["Newton Basic"] = gbo.NewtonBasicOptimizer(
+            dim=n,
+            function=fct,
+            gradient=gdt,
+            hessian=hes,
+            constraints=cons,
+            getoptinfo=optinf,
+            max_iter=max_iter,
+            ftol=ftol,
+            gtol=gtol,
+            xtol=xtol
         )
     if "Newton Line Search" in opts_list:
         opts["Newton Line Search"] = gbo.NewtonLineSearchOptimizer(
@@ -118,7 +132,7 @@ def init_optimizers(n, name, opts_list, **kwargs):
 def plot_optimization(name, opts_list, hp):
     # Problem definition
     x_0 = np.array([
-        10, 10
+        10, 10, 10, 10, 10
     ]).reshape(-1, 1)
     n = x_0.shape[0]
     opts, _ = init_optimizers(n, name, opts_list, **hp)
@@ -134,7 +148,7 @@ def plot_optimization(name, opts_list, hp):
     plt.show()
 
 
-def plot_box(opts_list, nb_iter=10, dim=2, names=['Sphere'], hp={}):
+def plot_box(opts_list, nb_iter=10, dim=2, names=['Sphere'], hp={}, cv_threshold=CONVERGENCE_THRESHOLD):
     data = []
     for name in names:
         print(name)
@@ -153,50 +167,60 @@ def plot_box(opts_list, nb_iter=10, dim=2, names=['Sphere'], hp={}):
                 )
                 _, _, timeperiter, _, _, xoptdiffs, foptdiffs = map(np.array, zip(*track))
 
-                data.append([opt, np.sum(timeperiter[1:]), len(track), xoptdiffs[-1], foptdiffs[-1]])
-    data = pd.DataFrame(data, columns=['Optimizer', 'Timestamp', 'NbIter', 'Finalxoptdiff', 'Finalfoptdiff'])
-    graph.plot_box(data, names, nb_iter)
+                data.append([opt, name, np.sum(timeperiter[1:]), len(track), xoptdiffs[-1], foptdiffs[-1]])
+    data = pd.DataFrame(data, columns=['Optimizer', 'Function', 'Timestamp', 'NbIter', 'Finalxoptdiff', 'Finalfoptdiff'])
+    graph.plot_box(data, names, nb_iter, cv_threshold=CONVERGENCE_THRESHOLD)
     plt.show()
 
 
 if __name__ == "__main__":
     # Objective function
     names = []
-    # names += ["Sphere"]
-    # names += ["Rosenbrock"]
-    # names += ["Rastigrin"]
-    # names += ["Levy13"]
+    names += ["Sphere"]
+    names += ["Rosenbrock"]
+    names += ["Rastigrin"]
+    names += ["Levy13"]
     names += ["Easom"]
-    # names += ["StyblinskiTang"]
+    names += ["StyblinskiTang"]
     # names += ["CrossInTray"]
+    # names += ["Holder"]
     # names += ["Norm1SphereWithSphereCons"]
+
 
     opts_list = []
     opts_list += ["MADS"]
     opts_list += ["CMAES"]
+    opts_list += ['Newton Basic']
     # opts_list += ["Newton Line Search"]
     # opts_list += ["Newton Log Barrier"]
     opts_list += ["GD"]
 
-
+    dim = 2
     # hp template
-    hyperparameters = {}
-    hyperparameters["Rastigrin"] = { # To tune
-        'max_iter': 2000,
-        'ftol': -1,
-        'xtol': 1e-14
-        # 'CMAES': {
-        #     'lambd': 15
-        # }
-    }
-    hyperparameters["Easom"] = { # To tune
-        'max_iter': 2000,
-        'ftol': -1,
-        'xtol': 1e-14,
-        'CMAES': {
-            'lambd': 15
-        }
+    hyperparameters = {
+        "Sphere": {},
+        "Rosenbrock": {
+            'max_iter': 500
+        },
+        "Rastigrin": {
+            'CMAES': {
+                'lambd':int((4 + int(3 * np.log(dim))) * 2 * np.log(dim +1))
+            }
+        },
+        "StyblinskiTang": {
+            'xtol': -1
+        },
+        "Easom": {
+            'ftol': -1,
+            'CMAES': {
+                'lambd': int((4 + int(3 * np.log(dim))) * 2 * np.log(dim +1))
+            }
+        },
+        "CrossInTray": {},
+        "Holder": {}
     }
 
-    # plot_optimization(names[0], opts_list, hyperparameters["Easom"])
-    plot_box(opts_list=opts_list, nb_iter=100, dim=2, names=names, hp=hyperparameters)
+
+    # hp = hyperparameters[names[0]]
+    # plot_optimization(names[0], opts_list, hp)
+    plot_box(opts_list=opts_list, nb_iter=100, dim=dim, names=names, hp=hyperparameters)
