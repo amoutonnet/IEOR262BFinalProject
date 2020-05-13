@@ -35,6 +35,7 @@ class GradientBasedOptimizer(base.Optimizer):
             return True, "method diverged"
         return False, None
 
+
 class NewtonBasicOptimizer(GradientBasedOptimizer):
     def __init__(
         self,
@@ -69,6 +70,7 @@ class NewtonBasicOptimizer(GradientBasedOptimizer):
             x = x + d
         return x, self.function(x)
 
+
 class NewtonLineSearchOptimizer(GradientBasedOptimizer):
     def __init__(
         self,
@@ -101,30 +103,39 @@ class NewtonLineSearchOptimizer(GradientBasedOptimizer):
 
     def bisection_search_algorithm(self, x, d):
         alpha_l, alpha_u = 0, 1
-        def grad_h(a): return np.dot(self.gradient(x + a * d).T, d)
-        while grad_h(alpha_u) < 0:
-            alpha_u *= 2
+        dosecondwhile = True
+        def grad_h(a): return np.squeeze(np.dot(self.gradient(x + a * d).T, d))
+        gotout = False
         while 1:
-            alpha = (alpha_l + alpha_u) / 2
-            poi = x + alpha * d
-            if self.test_constraints(poi) and(abs(grad_h(alpha)) < self.epsilon or abs(alpha_l - alpha_u) < self.epsilon or min([abs(i) for i in self.constraints.evaluate(poi)]) < self.epsilon):
-                break
-            elif grad_h(alpha) > 0 or not self.test_constraints(x + alpha_u * d):
-                alpha_u = alpha
+            if self.constraints.test(x + alpha_u * d):
+                if grad_h(alpha_u) > 0:
+                    break
+                elif gotout:
+                    dosecondwhile = False
+                    break
+                else:
+                    alpha_u *= 1.05
             else:
-                alpha_l = alpha
-        return alpha
+                alpha_u *= 0.95
+                gotout = True
+
+        if dosecondwhile:
+            while 1:
+                alpha = (alpha_l + alpha_u) / 2
+                if abs(grad_h(alpha)) < self.epsilon or abs(alpha_l - alpha_u) < self.epsilon:
+                    break
+                elif grad_h(alpha) > 0 or not self.test_constraints(x + alpha_u * d):
+                    alpha_u = alpha
+                else:
+                    alpha_l = alpha
+            return alpha
+        else:
+            return alpha_u
 
     def step(self, x, fx):
         if np.linalg.norm(self.gradient(x)) != 0:
             d = np.dot(-np.linalg.inv(self.hessian(x)), self.gradient(x))
             x = x + self.bisection_search_algorithm(x, d) * d
-        return x, self.function(x)
-
-    def step(self, x, fx):
-        if np.linalg.norm(self.gradient(x)) != 0:
-            d = np.dot(-np.linalg.inv(self.hessian(x)), self.gradient(x))
-            x = x + d
         return x, self.function(x)
 
 
@@ -181,6 +192,7 @@ class NewtonLogBarrierOptimizer(GradientBasedOptimizer):
         else:
             return stop, reason
 
+
 class GradientDescentOptimizer(GradientBasedOptimizer):
     def __init__(
         self,
@@ -195,24 +207,24 @@ class GradientDescentOptimizer(GradientBasedOptimizer):
         gtol=0,
         xtol=0,
         epsilon=1e-3,
-        learning_rate = 1e-1
+        learning_rate=1e-1
     ):
         super().__init__(
-                dim,
-                function,
-                gradient,
-                hessian,
-                constraints,
-                getoptinfo,
-                "Gradient Descent",
-                max_iter,
-                ftol,
-                gtol,
-                xtol
-            )
+            dim,
+            function,
+            gradient,
+            hessian,
+            constraints,
+            getoptinfo,
+            "Gradient Descent",
+            max_iter,
+            ftol,
+            gtol,
+            xtol
+        )
         self.epsilon = epsilon
         self.lr = learning_rate
 
     def step(self, x, fx):
-        x = x -self.lr * self.gradient(x)
+        x = x - self.lr * self.gradient(x)
         return x, self.function(x)

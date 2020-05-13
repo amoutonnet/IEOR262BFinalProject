@@ -79,7 +79,7 @@ def gStyblinskiTang(x):
 
 
 def hStyblinskiTang(x):
-    return 6 * np.diag(x.ravel()**2) - 16
+    return np.diag(6 * x.ravel()**2 - 16)
 
 
 def fRastigrin(x):
@@ -91,4 +91,4 @@ def gRastigrin(x):
 
 
 def hRastigrin(x):
-    return 2 + 40 * PI**2 * np.cos(2 * PI * np.diag(x.ravel()))
+    return np.diag(2 + 40 * PI**2 * np.cos(2 * PI * x.ravel()))
