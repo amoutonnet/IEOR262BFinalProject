@@ -29,7 +29,7 @@ class GradientBasedOptimizer(base.Optimizer):
             return True, "f_tol reached"
         if np.linalg.norm(self.gradient(self.x_next)) < self.gtol:
             return True, "g_tol reached"
-        if not self.test_constraints(self.x):
+        if not self.test_constraints(self.x_next):
             return True, "constraints violated"
         return False, None
 
@@ -67,31 +67,29 @@ class NewtonLineSearchOptimizer(GradientBasedOptimizer):
     def bisection_search_algorithm(self, x, d):
         alpha_l, alpha_u = 0, 1
         def grad_h(a): return np.dot(self.gradient(x + a * d).T, d)
-        while grad_h(alpha_u) > 0:
+        while grad_h(alpha_u) < 0:
             alpha_u *= 2
-        # while 1:
-        alpha_hat = alpha_u
-        alpha_l = 0
-        alpha = (alpha_u + alpha_l) / 2
-        while abs(grad_h(alpha)) > self.epsilon and alpha_hat - alpha_u > self.epsilon:
-            if grad_h(alpha) > 0:
+        while 1:
+            alpha = (alpha_l + alpha_u) / 2
+            poi = x + alpha * d
+            if self.test_constraints(poi) and(abs(grad_h(alpha)) < self.epsilon or abs(alpha_l - alpha_u) < self.epsilon or min([abs(i) for i in self.constraints.evaluate(poi)]) < self.epsilon):
+                break
+            elif grad_h(alpha) > 0 or not self.test_constraints(x + alpha_u * d):
                 alpha_u = alpha
             else:
                 alpha_l = alpha
-            alpha = (alpha_u + alpha_l) / 2
-            # poi = x + alpha * d
-            # if self.test_constraints(poi) and(abs(grad_h(alpha)) < self.epsilon or min([abs(i) for i in self.constraints.evaluate(poi)]) < self.epsilon):
-            #     break
-            # elif grad_h(alpha) > 0 or not self.test_constraints(x + alpha_u * d):
-            #     alpha_u = alpha
-            # else:
-            #     alpha_l = alpha
         return alpha
 
     def step(self, x, fx):
         if np.linalg.norm(self.gradient(x)) != 0:
             d = np.dot(-np.linalg.inv(self.hessian(x)), self.gradient(x))
             x = x + self.bisection_search_algorithm(x, d) * d
+        return x, self.function(x)
+
+    def step(self, x, fx):
+        if np.linalg.norm(self.gradient(x)) != 0:
+            d = np.dot(-np.linalg.inv(self.hessian(x)), self.gradient(x))
+            x = x + d
         return x, self.function(x)
 
 

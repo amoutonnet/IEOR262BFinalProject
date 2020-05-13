@@ -3,3 +3,4 @@ test.py
 optimizers/__pycache__
 functions/__pycache__
 utils/__pycache__
+params.py

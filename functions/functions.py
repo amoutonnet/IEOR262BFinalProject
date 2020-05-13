@@ -85,7 +85,7 @@ def gradient(name, x):
         gx = 0
         _locals = locals()
         exec("gx = ndf.g%s(x.ravel())" % name, globals(), _locals)
-        return _locals["gx"]
+        return _locals["gx"].reshape(-1, 1)
     else:
         raise NotImplementedError
 

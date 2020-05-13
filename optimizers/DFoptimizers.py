@@ -19,7 +19,7 @@ class MADSOptimizer(base.Optimizer):
         epsilon=0,
         mu=1,
         lambd=1,
-        use_minibasis=True,
+        use_minibasis=False,
     ):
         super().__init__(
             dim,
@@ -116,7 +116,7 @@ class MADSOptimizer(base.Optimizer):
             return True, "lambda reached its minimal value"
         if self.mu < self.mu_min:
             return True, "mu reached its minimal value"
-        if not self.test_constraints(self.x):
+        if not self.test_constraints(self.x_next):
             return True, "constraints violated"
         return False, None
 
@@ -147,7 +147,6 @@ class CMAESOptimizer(base.Optimizer):
         xtol=0,
         learning_rate=1e-1,
         lambd=None,
-        MSR=False,
         stop_eigenvalue=1e7
     ):
         super().__init__(
@@ -164,7 +163,6 @@ class CMAESOptimizer(base.Optimizer):
         """ User defined parameters """
         self.sigma = learning_rate                                              # Initial learning rate
         self.lambd = 4 + int(3 * np.log(self.dim)) if lambd is None else lambd  # Population size (offsprings)
-        self.MSR = MSR                                                          # Is Mean Success Rule step-size activated
         self.constrained_problem = bool(len(self.constraints))                  # Is there is a constraint
         # self.stop_eigenvalue = stop_eigenvalue                                # if max(D) > min(D) * stop_eigenvalue, stop optimization
         self.init_strategy_params()
@@ -294,7 +292,7 @@ class CMAESOptimizer(base.Optimizer):
         if self.fdiff < self.ftol:
             return True, "f_tol reached"
         if self.constrained_problem:
-            if not self.test_constraints(self.x) and self.verbose:
+            if not self.test_constraints(self.x_next) and self.verbose:
                 print("constraints violated")
         return False, None
 

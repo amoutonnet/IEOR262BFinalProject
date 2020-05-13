@@ -32,7 +32,7 @@ def plot_track(track, opt, name):
 
 def plot_box(data, func_names, n_iter):
 
-    fig, axes = plt.subplots(2, 2)
+    fig, axes = plt.subplots(2, 2, sharex=True)
 
     infos = {
         "Timestamp": (axes[0, 0], "Time (s)", "Total Time per Optimization"),
@@ -47,9 +47,10 @@ def plot_box(data, func_names, n_iter):
             sns.boxplot(x=data['Optimizer'], y=data[col], showmeans=True, ax=ax)
             sns.stripplot(x=data['Optimizer'], y=data[col], color="grey", jitter=0.2, size=2.5, ax=ax)
             ax.set_ylabel(infos[col][1])
+            if col in ["Finalxoptdiff", "Finalfoptdiff"]:
+                ax.set_yscale("log")
             ax.set_title(infos[col][2])
-            ax.legend()
 
-    namefunctions = ', '.join(func_names) + " functions" if len(func_names) > 1 else "%s function" % func_names[0]
+    # namefunctions = ', '.join(func_names) + " functions" if len(func_names) > 1 else "%s function" % func_names[0]
 
-    fig.suptitle("Performances of Optimizers | %s\n(Means and Confidence Intervals processed over %d Optimizations)" % (namefunctions, n_iter))
+    fig.suptitle("Performances of Optimizers over all functions\n(Means and Confidence Intervals processed over %d Optimizations)" % (n_iter))
