@@ -74,7 +74,7 @@ def init_optimizers(n, name, opts_list, **kwargs):
             ftol=ftol,
             xtol=xtol,
             learning_rate=params.pop("learning_rate", 10),
-            lambd=params.pop("lambd", 10),
+            lambd=params.pop("lambd", None),
         )
     if "Newton Line Search" in opts_list:
         params = kwargs.pop("Newton Line Search", {})
@@ -169,11 +169,11 @@ def draw_x0(name, cons, xmin=-50, xmax=50):
     return x0
 
 
-def plot_box(opts_list, hp, nb_iter=10, dim=2, names=['Sphere'], cv_threshold=CONVERGENCE_THRESHOLD):
+def plot_box(opts_list, hp, n_iter=10, dim=2, names=['Sphere'], cv_threshold=CONVERGENCE_THRESHOLD, latex=False):
     data = []
     for name in names:
         print("\n%s\n" % "Optimization for {:s} function starting".format(name).center(150, "-"))
-        for _ in tqdm(range(nb_iter), total=nb_iter):
+        for _ in tqdm(range(n_iter), total=n_iter):
             opts, cons = init_optimizers(dim, name, opts_list=opts_list, **hp[name])
             x0 = draw_x0(name, cons)
             for opt in opts_list:
@@ -187,13 +187,14 @@ def plot_box(opts_list, hp, nb_iter=10, dim=2, names=['Sphere'], cv_threshold=CO
 
                 data.append([opt, name, np.sum(timeperiter[1:]), len(track) - 1, xoptdiffs[-1], foptdiffs[-1]])
     data = pd.DataFrame(data, columns=['Optimizer', 'Function', 'Timestamp', 'NbIter', 'Finalxoptdiff', 'Finalfoptdiff'])
-    graph.plot_box(data, names, nb_iter, cv_threshold=CONVERGENCE_THRESHOLD)
+    graph.print_statistics(data, opts_list, names, n_iter, cv_threshold=CONVERGENCE_THRESHOLD, latex=latex)
+    graph.plot_box(data, names, n_iter, cv_threshold=CONVERGENCE_THRESHOLD)
     plt.show()
 
 
 if __name__ == "__main__":
     # Main parameters
-    dim = 5
+    dim = 2
     constrained = False
 
     # Objective function
@@ -210,8 +211,9 @@ if __name__ == "__main__":
         if dim == 2:
             names += ["Levy13"]
             names += ["Easom"]
-            # names += ["CrossInTray"]
-            # names += ["Holder"]
+            names += ["CrossInTray"]
+            names += ["Holder"]
+            pass
 
     opts_list = []
     if constrained:
@@ -220,32 +222,43 @@ if __name__ == "__main__":
         opts_list += ["Newton Line Search"]
         opts_list += ["Newton Log Barrier"]
     else:
-        # opts_list += ["MADS"]
-        # opts_list += ["CMAES"]
+        opts_list += ["MADS"]
+        opts_list += ["CMAES"]
         opts_list += ['Newton Basic']
-        # opts_list += ["GD"]
+        opts_list += ["GD"]
 
     # hp template
     hyperparameters = defaultdict(lambda: {})
 
     hyperparameters["Rosenbrock"] = {
-        'max_iter': 500
+        'max_iter': 1000
     }
 
     hyperparameters["Rastigrin"] = {
         'CMAES': {
-            'lambd': None
+            'lambd': int(2 * np.log(dim) * 4 + int(3 * np.log(dim)))
         }
     }
 
     hyperparameters["StyblinskiTang"] = {
-        'xtol': -1
+        'xtol': -1,
+        'CMAES': {
+            'lambd': int(2 * np.log(dim) * 4 + int(3 * np.log(dim)))
+        }
     }
 
     hyperparameters["Easom"] = {
+        'max_iter': 2000,
         'ftol': -1,
         'CMAES': {
-            'lambd': None
+            'lambd': int(2 * np.log(dim) * 4 + int(3 * np.log(dim)))
+        }
+    }
+
+    hyperparameters["Holder"] = {
+        'ftol': -1,
+        'CMAES': {
+            'lambd': int(2 * np.log(dim) * 4 + int(3 * np.log(dim)))
         }
     }
 
@@ -262,12 +275,16 @@ if __name__ == "__main__":
     }
 
     hyperparameters["StyblinskiTangWithPosCons"] = {
+        'xtol': -1,
+        'CMAES': {
+            'lambd': int(2 * np.log(dim) * 4 + int(3 * np.log(dim)))
+        },
         "Newton Line Search": {
             "epsilon": 1e-8
         }
     }
 
-    # plot_box(opts_list=opts_list, hp=hyperparameters, nb_iter=100, dim=dim, names=names)
+    plot_box(opts_list=opts_list, hp=hyperparameters, n_iter=100, dim=dim, names=names, latex=False)
 
-    x0 = np.array([2, 2, 2, 2, 2]).reshape(-1, 1)
-    plot_optimization(names[1], opts_list, x0, hyperparameters)
+    # x0 = np.array([-50, -50]).reshape(-1, 1)
+    # plot_optimization(names[0], opts_list, x0, hyperparameters)

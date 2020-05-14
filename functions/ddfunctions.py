@@ -195,4 +195,4 @@ def fHolder(x, y):
 
 
 def fCrossInTray(x, y):
-    return -0.0001 * (np.abs(np.sin(x) * np.sin(y) * np.exp(np.abs(100 - np.sqrt(x**2 + y**2) / np.pi))) + 1)**0.1
+    return -0.0001 * (np.abs(np.sin(x) * np.sin(y) * np.exp(np.abs(100 - np.sqrt(x**2 + y**2)/PI))) + 1)**0.1

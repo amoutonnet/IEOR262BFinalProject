@@ -21,27 +21,27 @@ PARAMS = {
         "min2D": r"$x^*=(1,1)$",
         "fopt": r"$f(x^*)=0$"
     },
-    "StyblinskiTang": {
-        "semiwidth": 5,
-        "min": r"$x^*=(-2.903534,...,-2.903534)$",
-        "min2D": r"$x^*=(-2.903534,-2.903534)$",
-        "fopt": r"$f(x^*) \approx -39.16617n$"
-    },
-    # "Easom": {
-    #     "semiwidth": 5,
-    #     "min2D": r"$x^*=(\pi,\pi)$",
-    #     "fopt": r"$f(x^*)=-1$"
-    # },
     "Rastigrin": {
         "semiwidth": 5,
         "min": r"$x^*=(0,...,0)$",
         "min2D": r"$x^*=(0,0)$",
         "fopt": r"$f(x^*)=0$"
     },
+    "StyblinskiTang": {
+        "semiwidth": 5,
+        "min": r"$x^*=(-2.903534,...,-2.903534)$",
+        "min2D": r"$x^*=(-2.903534,-2.903534)$",
+        "fopt": r"$f(x^*) \approx -39.16617n$"
+    },
     # "Levy13": {
     #     "semiwidth": 5,
     #     "min2D": r"$x^*=(1,1)$",
     #     "fopt": r"$f(x^*)=0$"
+    # },
+    # "Easom": {
+    #     "semiwidth": 5,
+    #     "min2D": r"$x^*=(\pi,\pi)$",
+    #     "fopt": r"$f(x^*)=-1$"
     # },
     # "Holder": {
     #     "semiwidth": 5,
@@ -74,7 +74,7 @@ for idx, name in enumerate(PARAMS.keys()):
         for j in range(len(XY[i])):
             Z[i, j] = f(name, XY[i, j].reshape(-1, 1))
 
-    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.Spectral,
+    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.rainbow,
                            linewidth=0, antialiased=False)
     ax.set_title(name + "\n" + PARAMS[name]["min"] + "\n" + PARAMS[name]["fopt"], fontsize=7)
 plt.show()
