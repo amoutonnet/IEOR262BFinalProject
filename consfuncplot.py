@@ -54,7 +54,7 @@ for idx, name in enumerate(PARAMS.keys()):
             if Z[i, j] < vmin:
                 vmin = Z[i, j]
 
-    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.Spectral,
+    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.rainbow,
                            linewidth=0, antialiased=False, vmin=vmin, vmax=vmax)
     ax.set_title(name + "\n" + PARAMS[name]["min"] + "\n" + PARAMS[name]["fopt"], fontsize=12)
 plt.show()

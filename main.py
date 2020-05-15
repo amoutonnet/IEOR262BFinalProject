@@ -73,7 +73,7 @@ def init_optimizers(n, name, opts_list, **kwargs):
             max_iter=max_iter,
             ftol=ftol,
             xtol=xtol,
-            learning_rate=params.pop("learning_rate", 10),
+            learning_rate=params.pop("learning_rate", 1),
             lambd=params.pop("lambd", None),
         )
     if "Newton Line Search" in opts_list:
@@ -157,7 +157,7 @@ def plot_optimization(name, opts_list, x0, hp):
     plt.show()
 
 
-def draw_x0(name, cons, xmin=-50, xmax=50):
+def draw_x0(name, cons, xmin=-10, xmax=10):
     if len(cons):
         if name == "Norm1SphereWithSphereCons":
             xmin, xmax = -np.sqrt(dim * 3), np.sqrt(dim * 3)
@@ -187,6 +187,7 @@ def plot_box(opts_list, hp, n_iter=10, dim=2, names=['Sphere'], cv_threshold=CON
 
                 data.append([opt, name, np.sum(timeperiter[1:]), len(track) - 1, xoptdiffs[-1], foptdiffs[-1]])
     data = pd.DataFrame(data, columns=['Optimizer', 'Function', 'Timestamp', 'NbIter', 'Finalxoptdiff', 'Finalfoptdiff'])
+    data["Convergence"] = (data["Finalfoptdiff"] <= cv_threshold) & (data["Finalxoptdiff"] <= cv_threshold)
     graph.print_statistics(data, opts_list, names, n_iter, cv_threshold=CONVERGENCE_THRESHOLD, latex=latex)
     graph.plot_box(data, names, n_iter, cv_threshold=CONVERGENCE_THRESHOLD)
     plt.show()
@@ -230,10 +231,6 @@ if __name__ == "__main__":
     # hp template
     hyperparameters = defaultdict(lambda: {})
 
-    hyperparameters["Rosenbrock"] = {
-        'max_iter': 1000
-    }
-
     hyperparameters["Rastigrin"] = {
         'CMAES': {
             'lambd': int(2 * np.log(dim) * 4 + int(3 * np.log(dim)))
@@ -249,7 +246,7 @@ if __name__ == "__main__":
 
     hyperparameters["Easom"] = {
         'max_iter': 2000,
-        'ftol': -1,
+        'ftol': 0,
         'CMAES': {
             'lambd': int(2 * np.log(dim) * 4 + int(3 * np.log(dim)))
         }

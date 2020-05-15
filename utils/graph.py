@@ -46,7 +46,7 @@ def plot_box(data, func_names, n_iter, cv_threshold=1e-3):
 
     boxprops = {'edgecolor': 'k', 'facecolor': 'w'}
     for col in data.columns:
-        if col != 'Optimizer' and col != 'Function':
+        if col not in['Optimizer', 'Function', 'Convergence'] :
             ax = infos[col][0]
             if col in ["Finalxoptdiff", "Finalfoptdiff"]:
                 sns.boxplot(x=data['Optimizer'], y=data[col], ax=ax, boxprops=boxprops)
@@ -54,7 +54,7 @@ def plot_box(data, func_names, n_iter, cv_threshold=1e-3):
                 ax.axhline(y=cv_threshold, color='r', linestyle='--', label='Convergence threshold', linewidth=0.7)
                 ax.set_yscale("log")
             else:
-                data_cv = data.loc[(data["Finalfoptdiff"] <= cv_threshold) & (data["Finalxoptdiff"] <= cv_threshold)]  # keep only optimizations that converged for stripplot
+                data_cv = data[data['Convergence'] == True]  # keep only optimizations that converged for stripplot
                 sns.boxplot(x=data['Optimizer'], y=data_cv[col], ax=ax, boxprops=boxprops)
                 sns.stripplot(x=data_cv['Optimizer'], y=data_cv[col], jitter=0.2, size=2.5, ax=ax, hue=data['Function'], palette="Set2")
             ax.set_ylabel(infos[col][1])
@@ -69,8 +69,9 @@ def plot_box(data, func_names, n_iter, cv_threshold=1e-3):
 
     fig.suptitle("Performances of Optimizers processed over %d Optimizations" % (n_iter))
 
-def print_table(data, opts_list, func_names, n_iter, cv_matrix, print_setup="{:.1f}%", table_title="Table", latex=False):
-    width = 15
+def print_table(data_mean, data_CI, opts_list, func_names, n_iter, cv_matrix, print_setup=("{:.1f}", "%"), table_title="Table", latex=False):
+    print_setup, unit = print_setup
+    width = 20
     add_width_first_col = 10
     nb_col = (len(func_names) + 1)
     total_line_width = nb_col * (width + 1) + add_width_first_col + 1
@@ -89,10 +90,10 @@ def print_table(data, opts_list, func_names, n_iter, cv_matrix, print_setup="{:.
         line = "|" + opt.center(width + add_width_first_col) + "|"
         for name in func_names:
             if cv_matrix.loc[opt, name]:
-                line += print_setup.format(data.loc[opt, name]).center(max(width, len(name) + 2)) + "|"
+                line += (print_setup.format(data_mean.loc[opt, name]) + unit + " +-" + print_setup.format(data_CI.loc[opt, name]) + unit).center(max(width, len(name) + 2)) + "|"
             else:
-                if "%" in print_setup:
-                    line += print_setup.format(0).center(max(width, len(name) + 2)) + "|"
+                if unit == "%":
+                    line += "0%".center(max(width, len(name) + 2)) + "|"
                 else:
                     line += "/".center(max(width, len(name) + 2)) + "|"
         print(line)
@@ -108,50 +109,58 @@ def print_table(data, opts_list, func_names, n_iter, cv_matrix, print_setup="{:.
             line = opt
             for name in func_names:
                 if cv_matrix.loc[opt, name]:
-                    line += " & " + print_setup.format(data.loc[opt, name])
+                    line += " & " + print_setup.format(data_mean.loc[opt, name]) + unit + "$\\pm$" + print_setup.format(data_CI.loc[opt, name]) + unit
                 else:
-                    if "%" in print_setup:
-                        line += " & " + print_setup.format(0)
+                    if unit == "%" :
+                        line += " & 0%"
                     else:
                         line += " & /"
             print(line.replace("%", "\%") + " \\\\")
 
 def print_statistics(data, opts_list, func_names, n_iter, cv_threshold, latex=False):
-    data_cv = data.loc[(data["Finalfoptdiff"] <= cv_threshold) & (data["Finalxoptdiff"] <= cv_threshold)]
-    cv_stats = pd.pivot_table(data_cv, values='Finalfoptdiff', index='Optimizer', columns='Function', aggfunc=len, fill_value=0)
-    cv_stats = cv_stats.multiply(100/n_iter)
-    time_stats = pd.pivot_table(data_cv, values=['Timestamp', 'NbIter'], index='Optimizer', columns='Function', aggfunc=np.mean, fill_value=0)
+    z_95 = 1.92  # 95% confidence interval
+    cv_means = pd.pivot_table(data, values='Convergence', index='Optimizer', columns='Function', aggfunc=np.count_nonzero, fill_value=0)
+    cv_means = cv_means.multiply(100/n_iter)
+    cv_CI = pd.pivot_table(data, values='Convergence', index='Optimizer', columns='Function', aggfunc='std')
+    cv_CI = cv_CI.multiply( 100 * z_95 / np.sqrt(n_iter))
+
+    time_means = pd.pivot_table(data[data['Convergence'] == True], values=['Timestamp', 'NbIter'], index='Optimizer', columns='Function', aggfunc=np.mean, fill_value=0)
+    time_CI = pd.pivot_table(data[data['Convergence'] == True], values=['Timestamp', 'NbIter'], index='Optimizer', columns='Function', aggfunc='std', fill_value=0)
+    time_CI = time_CI.multiply(z_95 / np.sqrt(n_iter))
     
     cv_matrix = pd.DataFrame(np.zeros((len(opts_list), len(func_names)), dtype=bool), columns=func_names, index=opts_list)
     for opt in opts_list:
         for name in func_names:
-            if opt in cv_stats.index and name in cv_stats.columns:
-                cv_matrix.loc[opt, name] = cv_stats.loc[opt, name] > 0
+            if opt in cv_means.index and name in cv_means.columns:
+                cv_matrix.loc[opt, name] = cv_means.loc[opt, name] > 0
 
-    print_table(cv_stats,
-        opts_list,
-        func_names,
-        n_iter,
-        cv_matrix,
-        print_setup="{:.0f}%",
+    print_table(data_mean=cv_means,
+        data_CI=cv_CI,
+        opts_list=opts_list,
+        func_names=func_names,
+        n_iter=n_iter,
+        cv_matrix=cv_matrix,
+        print_setup=("{:.1f}", "%"),
         table_title="Percentage of  Optimization that converged",
         latex=latex
         )
-    print_table(time_stats['Timestamp'],
-        opts_list,
-        func_names,
-        n_iter,
-        cv_matrix,
-        print_setup="{:.3f}s",
+    print_table(time_means['Timestamp'],
+        data_CI=time_CI['Timestamp'],
+        opts_list=opts_list,
+        func_names=func_names,
+        n_iter=n_iter,
+        cv_matrix=cv_matrix,
+        print_setup=("{:.3f}", "s"),
         table_title="Average duration of optimizations that converged (Time in seconds)",
         latex=latex
         )
-    print_table(time_stats['NbIter'],
-        opts_list,
-        func_names,
-        n_iter,
-        cv_matrix,
-        print_setup="{:.0f}",
+    print_table(time_means['NbIter'],
+        data_CI=time_CI['NbIter'],
+        opts_list=opts_list,
+        func_names=func_names,
+        n_iter=n_iter,
+        cv_matrix=cv_matrix,
+        print_setup=("{:.0f}", ""),
         table_title="Average number of iterations per optimization that converged",
         latex=latex
         )
